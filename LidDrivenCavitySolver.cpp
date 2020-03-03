@@ -6,14 +6,15 @@ using namespace std;
 int main(int argc, char **argv)
 {
     // Create a new instance of the LidDrivenCavity class
+    // Uses a pointer so solver is actually storing the address of the new instance
     LidDrivenCavity* solver = new LidDrivenCavity();
-
+    
     // Configure the solver here...
-    // ...
-    solver->Initialise();
+    // Arrow dereferences and initialises the solver at that address
+    solver -> Initialise();
 
     // Run the solver
-    solver->Integrate();
+    solver -> Integrate();
 
 	return 0;
 }
