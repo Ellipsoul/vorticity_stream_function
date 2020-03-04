@@ -15,7 +15,8 @@ public:
     void SetFinalTime(double finalt);
     void SetReynoldsNumber(double Re);
 
-    void Initialise();
+    void Initialise(double Lx_arg, double Ly_arg, int Nx_arg, int Ny_arg, int Px_arg, int Py_arg, 
+                    double dt_arg, double T_arg, double Re_arg);
     void Integrate();
 
     // Add any other public functions
