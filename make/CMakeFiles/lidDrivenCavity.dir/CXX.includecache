@@ -1,0 +1,26 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/aronteh/Desktop/Imperial College London/Year 3/Academics/AE3-321 High Performance Computing/Assignment/vorticityStreamFunction/LidDrivenCavity.cpp
+LidDrivenCavity.h
+/Users/aronteh/Desktop/Imperial College London/Year 3/Academics/AE3-321 High Performance Computing/Assignment/vorticityStreamFunction/LidDrivenCavity.h
+iostream
+-
+
+/Users/aronteh/Desktop/Imperial College London/Year 3/Academics/AE3-321 High Performance Computing/Assignment/vorticityStreamFunction/LidDrivenCavity.h
+string
+-
+
+/Users/aronteh/Desktop/Imperial College London/Year 3/Academics/AE3-321 High Performance Computing/Assignment/vorticityStreamFunction/LidDrivenCavitySolver.cpp
+iostream
+-
+LidDrivenCavity.h
+/Users/aronteh/Desktop/Imperial College London/Year 3/Academics/AE3-321 High Performance Computing/Assignment/vorticityStreamFunction/LidDrivenCavity.h
+boost/program_options.hpp
+-
+
