@@ -17,12 +17,15 @@ add_executable(
 )
 
 # Attach all libraries here
-find_package(boost_program_options REQUIRED)
+find_package(Boost REQUIRED COMPONENTS program_options)
 find_package(BLAS REQUIRED)
+
+target_include_directories(lidDrivenCavity PRIVATE ${BLAS_INCLUDE_DIR})
+target_include_directories(lidDrivenCavity PRIVATE ${Boost_INCLUDE_DIR})
 
 # Link the corresponding libraries from the 'target' to the found library
 # target_link_libraries(myprog ${BLAS_LIBRARIES})
-target_link_libraries(lidDrivenCavity ${BLAS_LIBRARIES} ${Boost_LIBRARIES} libboost_program_options.so)
+target_link_libraries(lidDrivenCavity ${BLAS_LIBRARIES} ${Boost_LIBRARIES})
 
 # Instructions for creating and running CMake files:
 #   1. Filename is "CMakeLists.txt"
@@ -37,3 +40,6 @@ target_link_libraries(lidDrivenCavity ${BLAS_LIBRARIES} ${Boost_LIBRARIES} libbo
 
 # While this isn't working yet, compile in command line using:
 # g++ LidDrivenCavity.cpp LidDrivenCavitySolver.cpp -lblas -lboost_program_options -std=c++11
+
+# Useful cmake command:
+# cmake -DCMAKE_C_COMPILER=/usr/bin/gcc -DCMAKE_CXX_COMPILER=/usr/bin/g++ ..

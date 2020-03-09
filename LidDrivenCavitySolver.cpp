@@ -38,10 +38,10 @@ int main(int argc, char* argv[])
     po::notify(vm);
 
     // Extract parameters into the proper data type
-    //const double Lx = vm["Lx"].as<double>();
+    const double Lx = vm["Lx"].as<double>();
     //const double Ly = vm["Ly"].as<double>();
 
-    //std::cout << Lx << endl;
+    std::cout << Lx << endl;
 
 
     // Configure the solver here...
