@@ -8,8 +8,6 @@ project(lidDrivenCavity)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-include_directories("${CMAKE_SOURCE_DIR}/boost_1_72_0")
-
 # Have the project name, then all source files following that
 # Header files will automatically be included with the linked cpp file
 add_executable(
@@ -19,11 +17,12 @@ add_executable(
 )
 
 # Attach all libraries here
-find_package(Boost REQUIRED)
+find_package(boost_program_options REQUIRED)
+find_package(BLAS REQUIRED)
 
 # Link the corresponding libraries from the 'target' to the found library
 # target_link_libraries(myprog ${BLAS_LIBRARIES})
-target_link_libraries(lidDrivenCavity Boost)
+target_link_libraries(lidDrivenCavity ${BLAS_LIBRARIES} ${Boost_LIBRARIES} libboost_program_options.so)
 
 # Instructions for creating and running CMake files:
 #   1. Filename is "CMakeLists.txt"
@@ -35,3 +34,6 @@ target_link_libraries(lidDrivenCavity Boost)
 #       make
 #   4. The program executable will be made with the project name. Run it like an ./a.out file (without extension)
 #       ./myprog
+
+# While this isn't working yet, compile in command line using:
+# g++ LidDrivenCavity.cpp LidDrivenCavitySolver.cpp -lblas -lboost_program_options -std=c++11
