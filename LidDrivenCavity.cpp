@@ -4,12 +4,12 @@
 
 using namespace std;
 
-// Constructor (leave blank)
+// Constructor (will be left empty)
 LidDrivenCavity::LidDrivenCavity()
 {
 }
 
-// Destructor (also leave blank)
+// Destructor (will be left empty)
 LidDrivenCavity::~LidDrivenCavity()
 {
 }
@@ -48,7 +48,6 @@ void LidDrivenCavity::Integrate()
     // Initial Conditions
     
     // Initiliase streamfunction matrix of zeroes
-    // Loop for now, fix later
 
 }
 

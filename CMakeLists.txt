@@ -38,8 +38,8 @@ target_link_libraries(lidDrivenCavity ${BLAS_LIBRARIES} ${Boost_LIBRARIES})
 #   4. The program executable will be made with the project name. Run it like an ./a.out file (without extension)
 #       ./myprog
 
-# While this isn't working yet, compile in command line using:
-# g++ LidDrivenCavity.cpp LidDrivenCavitySolver.cpp -lblas -lboost_program_options -std=c++11
+# Pass in these arguments when running
+# ./lidDrivenCavity --Lx 10.2 --Ly 23.1 --Nx 80 --Ny 70 --Px 2 --Py 3 --dt 0.05 --T 10 --Re 15000
 
-# Useful cmake command:
-# cmake -DCMAKE_C_COMPILER=/usr/bin/gcc -DCMAKE_CXX_COMPILER=/usr/bin/g++ ..
+# Compile in command line if packages fail
+# g++ LidDrivenCavity.cpp LidDrivenCavitySolver.cpp -lblas -lboost_program_options -std=c++11
