@@ -53,18 +53,6 @@ void LidDrivenCavity::SetGridSize(double nx, double ny)
     Ny = int(ny);
 }
 
-// Setting time step size
-void LidDrivenCavity::SetTimeStep(double deltat)
-{
-    // Catch and return error if timestep is not positive
-    if (deltat <= 0) {
-        throw domain_error("dt must be a positive value. Program terminated");
-    }
-
-    // Set value if check passes
-    dt = deltat;
-}
-
 // Setting final time
 void LidDrivenCavity::SetFinalTime(double finalt)
 {
@@ -89,6 +77,18 @@ void LidDrivenCavity::SetReynoldsNumber(double re)
     Re = re;
 }
 
+// Setting time step size
+void LidDrivenCavity::SetTimeStep(double deltat, double Lx, double Ly, unsigned int Nx, unsigned int Ny, double Re)
+{
+    // Catch and return error if timestep is not positive
+    if (deltat <= 0 || deltat >= Re*(Lx/Nx)*(Ly/Ny)/4) {
+        throw domain_error("dt must be a positive value and within the allowed range. Program terminated");
+    }
+
+    // Set value if check passes
+    dt = deltat;
+}
+
 // Setting number of partitions
 void LidDrivenCavity::SetPartitions(double px, double py, int nx, int ny)
 {
@@ -105,6 +105,7 @@ void LidDrivenCavity::SetPartitions(double px, double py, int nx, int ny)
     Py = int(py);
 }
 
+// Initialising variables and outputting errors
 void LidDrivenCavity::Initialise(const double Lx_arg, const double Ly_arg, const double Nx_arg, const double Ny_arg,
                                 const double Px_arg, const double Py_arg, const double dt_arg, const double T_arg, 
                                 const double Re_arg)
@@ -130,7 +131,7 @@ void LidDrivenCavity::Initialise(const double Lx_arg, const double Ly_arg, const
 
     // Set time step
     try {
-        SetTimeStep(dt_arg);
+        SetTimeStep(dt_arg, Lx_arg, Ly_arg, Nx_arg, Ny_arg, Re_arg);
     }
     catch (domain_error& e) {
         cout << "Error: " << e.what() << endl;
@@ -163,13 +164,14 @@ void LidDrivenCavity::Initialise(const double Lx_arg, const double Ly_arg, const
         cout << "Error: " << e.what() << endl;
         exit(EXIT_FAILURE);
     }
+
 }
 
+// Implementation of the 
 void LidDrivenCavity::Integrate()
-{
-    // Initial Conditions
-    
+{    
+    // Setting initial conditions
+
     // Initiliase streamfunction matrix of zeroes
 
 }
-

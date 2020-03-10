@@ -11,9 +11,9 @@ public:
 
     void SetDomainSize(double xlen, double ylen);
     void SetGridSize(double nx, double ny);
-    void SetTimeStep(double deltat);
     void SetFinalTime(double finalt);
     void SetReynoldsNumber(double Re);
+    void SetTimeStep(double deltat, double Lx, double Ly, unsigned int Nx, unsigned int Ny, double Re);
     void SetPartitions(double px, double py, int nx, int ny);
 
     void Initialise(const double Lx_arg, const double Ly_arg, const double Nx_arg, const double Ny_arg,
@@ -36,5 +36,4 @@ private:
     double Lx;
     double Ly;
     double Re;
-
 };

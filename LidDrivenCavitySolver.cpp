@@ -24,7 +24,7 @@ int main(int argc, char* argv[])
     opts.add_options()
         ("Lx", po::value<double>(),       "Length of the domain in the x-direction")
         ("Ly", po::value<double>(),       "Length of the domain in the y-direction")
-        
+
         // Positive integer checks required
         ("Nx", po::value<double>(), "Number of grid points in x-direction")
         ("Ny", po::value<double>(), "Number of grid points in y-direction")
@@ -57,6 +57,6 @@ int main(int argc, char* argv[])
 
     // Run the solver
     solver -> Integrate();
-
+ 
 	return 0;
 }
