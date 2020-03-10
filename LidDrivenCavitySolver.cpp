@@ -1,5 +1,6 @@
 // Basic
 #include <iostream>
+#include <typeinfo>
 
 // External Libraries and Files
 #include "LidDrivenCavity.h"
@@ -23,10 +24,13 @@ int main(int argc, char* argv[])
     opts.add_options()
         ("Lx", po::value<double>(),       "Length of the domain in the x-direction")
         ("Ly", po::value<double>(),       "Length of the domain in the y-direction")
-        ("Nx", po::value<unsigned int>(), "Number of grid points in x-direction")
-        ("Ny", po::value<unsigned int>(), "Number of grid points in y-direction")
-        ("Px", po::value<unsigned int>(), "Number of partitions in the x-direction (parallel)")
-        ("Py", po::value<unsigned int>(), "Number of partitions in the y-direction (parallel)")
+        
+        // Positive integer checks required
+        ("Nx", po::value<double>(), "Number of grid points in x-direction")
+        ("Ny", po::value<double>(), "Number of grid points in y-direction")
+        ("Px", po::value<double>(), "Number of partitions in the x-direction (parallel)")
+        ("Py", po::value<double>(), "Number of partitions in the y-direction (parallel)")
+
         ("dt", po::value<double>(),        "Time step size")
         ("T",  po::value<double>(),        "Final time")
         ("Re", po::value<double>(),        "Reynolds number");
@@ -36,20 +40,20 @@ int main(int argc, char* argv[])
     po::store(po::parse_command_line(argc, argv, opts), vm);
     po::notify(vm);
 
-    // Extract parameters into the proper data type
-    const double       Lx = vm["Lx"].as<double>();
-    const double       Ly = vm["Ly"].as<double>();
-    const unsigned int Nx = vm["Nx"].as<unsigned int>();
-    const unsigned int Ny = vm["Ny"].as<unsigned int>();
-    const unsigned int Px = vm["Px"].as<unsigned int>();
-    const unsigned int Py = vm["Py"].as<unsigned int>();
-    const double       dt = vm["dt"].as<double>();
-    const double       T  = vm["T"].as<double>();
-    const double       Re = vm["Re"].as<double>();
+    // Extract command line arguments into parameters
+    const double Lx_arg = vm["Lx"].as<double>();
+    const double Ly_arg = vm["Ly"].as<double>();
+    const double Nx_arg = vm["Nx"].as<double>();
+    const double Ny_arg = vm["Ny"].as<double>();
+    const double Px_arg = vm["Px"].as<double>();
+    const double Py_arg = vm["Py"].as<double>();
+    const double dt_arg = vm["dt"].as<double>();
+    const double T_arg  = vm["T"].as<double>();
+    const double Re_arg = vm["Re"].as<double>();
 
-    // Configure the solver here...
+    // Configure solver
     // Arrow dereferences and initialises the solver at that address
-    solver -> Initialise();
+    solver -> Initialise(Lx_arg, Ly_arg, Nx_arg, Ny_arg, Px_arg, Py_arg, dt_arg, T_arg, Re_arg);
 
     // Run the solver
     solver -> Integrate();

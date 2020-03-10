@@ -36,10 +36,13 @@ target_link_libraries(lidDrivenCavity ${BLAS_LIBRARIES} ${Boost_LIBRARIES})
 #   3. In this new directory run the Makefile:
 #       make
 #   4. The program executable will be made with the project name. Run it like an ./a.out file (without extension)
-#       ./myprog
+#       ./lidDrivenCavity
+
+# Full command line recompile and execute:
+# make clean; cmake ../ ; make; ./lidDrivenCavity --Lx 1.0 --Ly 1.0 --Nx 161 --Ny 161 --Px 4 --Py 4 --dt 0.05 --T 10 --Re 400
 
 # Pass in these arguments when running
-# ./lidDrivenCavity --Lx 10.2 --Ly 23.1 --Nx 80 --Ny 70 --Px 2 --Py 3 --dt 0.05 --T 10 --Re 15000
+# ./lidDrivenCavity --Lx 1.0 --Ly 1.0 --Nx 161 --Ny 161 --Px 4 --Py 4 --dt 0.05 --T 10 --Re 400
 
 # Compile in command line if packages fail
 # g++ LidDrivenCavity.cpp LidDrivenCavitySolver.cpp -lblas -lboost_program_options -std=c++11

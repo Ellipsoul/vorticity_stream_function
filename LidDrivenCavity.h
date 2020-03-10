@@ -10,12 +10,15 @@ public:
     ~LidDrivenCavity();
 
     void SetDomainSize(double xlen, double ylen);
-    void SetGridSize(int nx, int ny);
+    void SetGridSize(double nx, double ny);
     void SetTimeStep(double deltat);
     void SetFinalTime(double finalt);
     void SetReynoldsNumber(double Re);
+    void SetPartitions(double px, double py, int nx, int ny);
 
-    void Initialise();
+    void Initialise(const double Lx_arg, const double Ly_arg, const double Nx_arg, const double Ny_arg,
+                    const double Px_arg, const double Py_arg, const double dt_arg, const double T_arg, 
+                    const double Re_arg);
     void Integrate();
 
     // Add any other public functions
@@ -28,6 +31,8 @@ private:
     double T;
     int    Nx;
     int    Ny;
+    int    Px;
+    int    Py;
     double Lx;
     double Ly;
     double Re;
