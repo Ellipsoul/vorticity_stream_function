@@ -16,10 +16,9 @@ public:
     void SetTimeStep(double deltat, double Lx, double Ly, unsigned int Nx, unsigned int Ny, double Re);
     void SetPartitions(double px, double py, int nx, int ny);
 
-    void Initialise(const double Lx_arg, const double Ly_arg, const double Nx_arg, const double Ny_arg,
+    void Solve(const double Lx_arg, const double Ly_arg, const double Nx_arg, const double Ny_arg,
                     const double Px_arg, const double Py_arg, const double dt_arg, const double T_arg, 
                     const double Re_arg);
-    void Integrate();
 
     // Add any other public functions
 
@@ -36,4 +35,5 @@ private:
     double Lx;
     double Ly;
     double Re;
+
 };

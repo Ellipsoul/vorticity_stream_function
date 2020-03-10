@@ -5,6 +5,8 @@
 #include <iostream>
 #include <exception>
 #include <algorithm>
+#include <math.h>
+#include <fstream>
 
 // External Libraries
 #include "cblas.h"
@@ -106,10 +108,12 @@ void LidDrivenCavity::SetPartitions(double px, double py, int nx, int ny)
 }
 
 // Initialising variables and outputting errors
-void LidDrivenCavity::Initialise(const double Lx_arg, const double Ly_arg, const double Nx_arg, const double Ny_arg,
+void LidDrivenCavity::Solve(const double Lx_arg, const double Ly_arg, const double Nx_arg, const double Ny_arg,
                                 const double Px_arg, const double Py_arg, const double dt_arg, const double T_arg, 
                                 const double Re_arg)
 {  
+    // Perform argument checks and assign into variable if passed
+    //--------------------------------------------------------------------------------------------------------------
 
     // Set cavity/domain size
     try {
@@ -164,14 +168,101 @@ void LidDrivenCavity::Initialise(const double Lx_arg, const double Ly_arg, const
         cout << "Error: " << e.what() << endl;
         exit(EXIT_FAILURE);
     }
+    //--------------------------------------------------------------------------------------------------------------
 
-}
+    // Implementing solver
+    //--------------------------------------------------------------------------------------------------------------
 
-// Implementation of the 
-void LidDrivenCavity::Integrate()
-{    
-    // Setting initial conditions
+    // Initial conditions
+    const int Nx_const = Nx;
+    const int Ny_const = Ny;
 
-    // Initiliase streamfunction matrix of zeroes
+    double psi[Nx_const][Ny_const];
+    double omega[Nx_const][Ny_const];
+    double omega_new[Nx_const][Ny_const];
+
+    // Psi and Omega initial zero matrix
+    for (int i=0; i<Nx; i++){
+        for (int j=0; j<Ny; j++) {
+            psi[i][j] = 0;
+            omega[i][j] = 0;
+            omega_new[i][j] = 0;
+        }
+    }
+
+    // Useful variables
+    double dx = Lx/Nx;
+    double dy = Ly/Ny;
+    double U = 1.0;
+    int t_steps = ceil(T/dt);
+
+    // Looping through every time increment
+    for (int i=1; i<2; i++) {  // Change the max to t_steps when ready
+        
+        // Calculating vorticity boundary conditions at time t
+        //---------------------------------------------------------------------------------------------------------
+        for (int j=0; j<Nx; j++) {
+            omega[0][j] = 2/(dy*dy) * (psi[0][j] - psi[1][j]) - 2*U/dy;  // Top Surface
+            omega_new[0][j] = omega[0][j];
+            omega[Nx-1][j] = 2/(dy*dy) * (psi[Nx-1][j] - psi[Nx-2][j]);  // Bottom Surface
+            omega_new[Nx-1][j] = omega[Nx-1][j];
+        }
+        for (int j=1; j<Ny-1; j++) {
+            omega[j][0] = 2/(dx*dx) * (psi[j][0] - psi[j][1]);           // Left Surface
+            omega_new[j][0] = omega[j][0];
+            omega[j][Nx-1] = 2/(dx*dx) * (psi[j][Nx-1] - psi[j][Nx-1]);  // Right Surface
+            omega_new[j][Nx-1] = omega[j][Nx-1];
+        }
+        //---------------------------------------------------------------------------------------------------------
+
+        // Calculate interior vorticity at time t
+        //---------------------------------------------------------------------------------------------------------
+        for (int j=1; j<Nx-1; j++) {
+            for (int k=1; k<Ny-1; k++) {
+                omega[j][k] = - ( (psi[j-1][k] - 2*psi[j][k] + psi[j+1][k])/(dx*dx) + 
+                                  (psi[j][k+1] - 2*psi[j][k] + psi[j][k-1])/(dy*dy) );
+            }
+        }
+        //---------------------------------------------------------------------------------------------------------
+
+        // Calculate interior vorticity at time t + dt
+        //---------------------------------------------------------------------------------------------------------
+        for (int j=1; j<Nx-1; j++) {
+            for (int k=1; k<Ny-1; k++) {
+                omega_new[j][k] = ( (1/Re)*( (omega[j-1][k]-2*omega[j][k]+omega[j+1][k])/(dx*dx) + 
+                                    (omega[j][k+1]-2*omega[j][k]+omega[j][k-1]) ) + 
+                                    (psi[j-1][k]-psi[j+1][k])/(2*dx)*(omega[j][k+1]-omega[j][k-1])/(2*dy) -
+                                    (psi[j][k+1]-psi[j][k-1])/(2*dy)*(omega[j-1][k]-omega[j+1][k])/(2*dx) ) * dt +
+                                    omega[j][k];
+            }
+        }
+        //---------------------------------------------------------------------------------------------------------
+
+        // Solve the Poisson problem to calculate stream-function at time t + dt
+        //---------------------------------------------------------------------------------------------------------
+
+        //---------------------------------------------------------------------------------------------------------
+    }
+
+    // Writing the vorticity and streamfunction values to a file for observation
+    ofstream myfile1;
+    ofstream myfile2;
+    ofstream myfile3;
+    myfile1.open("stream.txt");
+    myfile2.open("vorticity.txt");
+    myfile3.open("vorticity_new.txt");
+    for (int i=0; i<Nx; i++){
+        for (int j=0; j<Nx; j++) {
+            myfile1 << psi[i][j] << " ";
+            myfile2 << omega[i][j] << " ";
+            myfile3 << omega_new[i][j] << " ";
+        }
+        myfile1 << endl;
+        myfile2 << endl;
+        myfile3 << endl;
+    }
+    myfile1.close();
+    myfile2.close();
+    myfile3.close();
 
 }

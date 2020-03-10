@@ -51,12 +51,9 @@ int main(int argc, char* argv[])
     const double T_arg  = vm["T"].as<double>();
     const double Re_arg = vm["Re"].as<double>();
 
-    // Configure solver
+    // Configure and run solver
     // Arrow dereferences and initialises the solver at that address
-    solver -> Initialise(Lx_arg, Ly_arg, Nx_arg, Ny_arg, Px_arg, Py_arg, dt_arg, T_arg, Re_arg);
-
-    // Run the solver
-    solver -> Integrate();
+    solver -> Solve(Lx_arg, Ly_arg, Nx_arg, Ny_arg, Px_arg, Py_arg, dt_arg, T_arg, Re_arg);
  
 	return 0;
 }
