@@ -11,10 +11,12 @@
 
 using namespace std;
 
+// Constructor
 PoissonSolver::PoissonSolver()
 {
 }
 
+// Destructor
 PoissonSolver::~PoissonSolver()
 {
 }
