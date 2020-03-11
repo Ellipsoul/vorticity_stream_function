@@ -14,6 +14,7 @@ add_executable(
     lidDrivenCavity
     LidDrivenCavity.cpp
     LidDrivenCavitySolver.cpp
+    PoissonSolver.cpp
 )
 
 # Attach all libraries here
