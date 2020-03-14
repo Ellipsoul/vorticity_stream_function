@@ -22,6 +22,7 @@ LidDrivenCavity::LidDrivenCavity()
 // Destructor (will be left empty)
 LidDrivenCavity::~LidDrivenCavity()
 {
+    // Maybe delete variables here...
 }
 
 // Setting the cavity size
@@ -241,6 +242,7 @@ void LidDrivenCavity::Solve(const double Lx_arg, const double Ly_arg, const doub
 
         // Solve the Poisson problem to calculate stream-function at time t + dt
         //---------------------------------------------------------------------------------------------------------        
+        //
         PoissonSolver* poisson = new PoissonSolver();
         poisson -> SolvePoisson((double*)omega_new, Ny, Nx);
         //---------------------------------------------------------------------------------------------------------

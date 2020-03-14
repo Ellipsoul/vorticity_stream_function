@@ -23,6 +23,7 @@ public:
     // Add any other public functions
 
 private:
+    // All private variables can be accessed by any member in the function
     double* v = nullptr;
     double* s = nullptr;
 

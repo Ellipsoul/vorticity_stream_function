@@ -20,13 +20,16 @@ add_executable(
 # Attach all libraries here
 find_package(Boost REQUIRED COMPONENTS program_options)
 find_package(BLAS REQUIRED)
+find_package(LAPACK REQUIRED)
+find_package(MPI REQUIRED)
 
 target_include_directories(lidDrivenCavity PRIVATE ${BLAS_INCLUDE_DIR})
 target_include_directories(lidDrivenCavity PRIVATE ${Boost_INCLUDE_DIR})
+target_include_directories(lidDrivenCavity PRIVATE ${LAPACK_INCLUDE_DIR})
 
 # Link the corresponding libraries from the 'target' to the found library
 # target_link_libraries(myprog ${BLAS_LIBRARIES})
-target_link_libraries(lidDrivenCavity ${BLAS_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(lidDrivenCavity ${BLAS_LIBRARIES} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES})
 
 # Instructions for creating and running CMake files:
 #   1. Filename is "CMakeLists.txt"
@@ -40,7 +43,7 @@ target_link_libraries(lidDrivenCavity ${BLAS_LIBRARIES} ${Boost_LIBRARIES})
 #       ./lidDrivenCavity
 
 # Full command line recompile and execute:
-# cd ..;rmdir build;mkdir build;cd build;cmake ../;make;./lidDrivenCavity --Lx 1.0 --Ly 1.0 --Nx 161 --Ny 161 --Px 4 --Py 4 --dt 0.01 --T 10 --Re 4000
+# make clean;cd ..;rmdir build;mkdir build;cd build;cmake ../;make;./lidDrivenCavity --Lx 1.0 --Ly 1.0 --Nx 161 --Ny 161 --Px 4 --Py 4 --dt 0.01 --T 10 --Re 4000
 
 # Pass in these arguments when running
 # ./lidDrivenCavity --Lx 1.0 --Ly 1.0 --Nx 161 --Ny 161 --Px 4 --Py 4 --dt 0.05 --T 10 --Re 400
