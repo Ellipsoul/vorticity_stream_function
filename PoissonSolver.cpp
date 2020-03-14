@@ -62,11 +62,12 @@ void PoissonSolver::SolvePoisson(double * omega_new, int Ny, int Nx) {
     //----------------------------------------------------------------------------------------------------------------
     // Populate banded A matrix
     for (int i=0; i<ldab*n; i++) {
-        if (i >= 2*ku*n & i < 2*ku*n+n) {
+        if ((i - 2*ku)%ldab == 0) {
             A[i] = 4;
         }
-        else if ( (i >= ku*n+ku & i < ku*n+n) || (i >= 3*ku*n & i < 3*ku*n+n-ku) || 
-                  (i >= 2*ku*n-n+1 & i < 2*ku*n & i%ku != 0) || (i >= 2*ku*n+n & i < 2*ku*n+2*n-1 & (i+1)%ku != 0) ) {
+        else if ( ((i-ku)%ldab==0 & i > ku*ldab+1) || ((i+1)%ldab==0 & i < (n-ku)*ldab) || 
+                  (i<ldab*n-ku & (i-2*ku-1)%ldab == 0 & (i+ku)%(ldab*ku)!=0) ||
+                  (i>2*ku-1 & (i-2*ku+1)%ldab ==0 & (i-2*ku+1)%(ldab*ku)!=0) ) {
             A[i] = -1;
         }
         else {
@@ -74,59 +75,25 @@ void PoissonSolver::SolvePoisson(double * omega_new, int Ny, int Nx) {
         }
     }
 
-    double* A2 = new double[ldab*n];
-
-    for (int i=0; i<ldab*n; i++) {
-        if ((i - 2*ku)%ldab == 0) {
-            A2[i] = 4;
-        }
-        else if ( ((i-ku)%ldab==0 & i > ku*ldab+1) || ((i+1)%ldab==0 & i < (n-ku)*ldab) || 
-                  (i<ldab*n-ku & (i-2*ku-1)%ldab == 0 & (i+ku)%(ldab*ku)!=0) ||
-                  (i>2*ku-1 & (i-2*ku+1)%ldab ==0 & (i-2*ku+1)%(ldab*ku)!=0) ) {
-            A2[i] = -1;
-        }
-        else {
-            A2[i] = 0;
-        }
-    }
-    cout << A2[6] << A2[16] << endl;
-
-    // Banded A matrix visualisation
     ofstream myfile6;
     myfile6.open("A_matrix.txt");
-    for (int i=0; i<ldab; i++){
-        for (int j=0; j<n; j++) {
-            if (A[i*n + j] == -1) {
-                myfile6 << A[i*n + j] << " ";
+    for (int i=0; i<n; i++){
+        for (int j=0; j<ldab; j++) {
+            if (A[i*ldab + j] == -1) {
+                myfile6 << A[i*ldab + j] << " ";
             } 
             else {
-                myfile6 << A[i*n + j] << "  ";
+                myfile6 << A[i*ldab + j] << "  ";
             }
         }
         myfile6 << endl;
     }
     myfile6.close();
 
-    ofstream myfile7;
-    myfile7.open("A2_matrix.txt");
-    for (int i=0; i<n; i++){
-        for (int j=0; j<ldab; j++) {
-            if (A2[i*ldab + j] == -1) {
-                myfile7 << A2[i*ldab + j] << " ";
-            } 
-            else {
-                myfile7 << A2[i*ldab + j] << "  ";
-            }
-        }
-        myfile7 << endl;
-    }
-    myfile7.close();
-
     //----------------------------------------------------------------------------------------------------------------
     // Populate b vector from passed in vorticity matrix argument
     // Convert the vorticity matrix into a long vector (exclude vorticities in the boundaries)
     // Incremement index by column, then by row
-
     double* vorticity_vec[n];
     ofstream myfile5;
     myfile5.open("vorticity_vector.txt");
@@ -141,6 +108,6 @@ void PoissonSolver::SolvePoisson(double * omega_new, int Ny, int Nx) {
 
     //----------------------------------------------------------------------------------------------------------------
     // Running the solver
-    //F77NAME(dgbsv) (n, kl, ku, nrhs, A, ldab, piv, b, ldb, info);
+    F77NAME(dgbsv) (n, kl, ku, nrhs, A, ldab, piv, b, ldb, info);
 
 }
