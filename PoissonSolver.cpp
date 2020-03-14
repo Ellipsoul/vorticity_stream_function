@@ -74,6 +74,23 @@ void PoissonSolver::SolvePoisson(double * omega_new, int Ny, int Nx) {
         }
     }
 
+    double* A2 = new double[ldab*n];
+
+    for (int i=0; i<ldab*n; i++) {
+        if ((i - 2*ku)%ldab == 0) {
+            A2[i] = 4;
+        }
+        else if ( ((i-ku)%ldab==0 & i > ku*ldab+1) || ((i+1)%ldab==0 & i < (n-ku)*ldab) || 
+                  (i<ldab*n-ku & (i-2*ku-1)%ldab == 0 & (i+ku)%(ldab*ku)!=0) ||
+                  (i>2*ku-1 & (i-2*ku+1)%ldab ==0 & (i-2*ku+1)%(ldab*ku)!=0) ) {
+            A2[i] = -1;
+        }
+        else {
+            A2[i] = 0;
+        }
+    }
+    cout << A2[6] << A2[16] << endl;
+
     // Banded A matrix visualisation
     ofstream myfile6;
     myfile6.open("A_matrix.txt");
@@ -89,6 +106,21 @@ void PoissonSolver::SolvePoisson(double * omega_new, int Ny, int Nx) {
         myfile6 << endl;
     }
     myfile6.close();
+
+    ofstream myfile7;
+    myfile7.open("A2_matrix.txt");
+    for (int i=0; i<n; i++){
+        for (int j=0; j<ldab; j++) {
+            if (A2[i*ldab + j] == -1) {
+                myfile7 << A2[i*ldab + j] << " ";
+            } 
+            else {
+                myfile7 << A2[i*ldab + j] << "  ";
+            }
+        }
+        myfile7 << endl;
+    }
+    myfile7.close();
 
     //----------------------------------------------------------------------------------------------------------------
     // Populate b vector from passed in vorticity matrix argument
