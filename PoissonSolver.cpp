@@ -8,8 +8,8 @@
 #include <cstdlib>
 
 // External Libraries
-#include "cblas.h"
-#include "mpi.h"
+#include <cblas.h>
+#include <mpi.h>
 
 using namespace std;
 
@@ -108,6 +108,6 @@ void PoissonSolver::SolvePoisson(double * omega_new, int Ny, int Nx) {
 
     //----------------------------------------------------------------------------------------------------------------
     // Running the solver
-    F77NAME(dgbsv) (n, kl, ku, nrhs, A, ldab, piv, b, ldb, info);
+    // F77NAME(dgbsv) (n, kl, ku, nrhs, A, ldab, piv, b, ldb, info);
 
 }

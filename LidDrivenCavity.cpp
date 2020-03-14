@@ -10,7 +10,8 @@
 #include <fstream>
 
 // External Libraries
-#include "cblas.h"
+#include <cblas.h>
+#include <mpi.h>
 
 using namespace std;
 

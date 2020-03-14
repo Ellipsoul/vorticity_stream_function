@@ -21,15 +21,17 @@ add_executable(
 find_package(Boost REQUIRED COMPONENTS program_options)
 find_package(BLAS REQUIRED)
 find_package(LAPACK REQUIRED)
+find_package(SCALAPACK REQUIRED)
 find_package(MPI REQUIRED)
 
 target_include_directories(lidDrivenCavity PRIVATE ${BLAS_INCLUDE_DIR})
 target_include_directories(lidDrivenCavity PRIVATE ${Boost_INCLUDE_DIR})
 target_include_directories(lidDrivenCavity PRIVATE ${LAPACK_INCLUDE_DIR})
+target_include_directories(lidDrivenCavity PRIVATE ${MPI_INCLUDE_PATH})
 
 # Link the corresponding libraries from the 'target' to the found library
 # target_link_libraries(myprog ${BLAS_LIBRARIES})
-target_link_libraries(lidDrivenCavity ${BLAS_LIBRARIES} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES})
+target_link_libraries(lidDrivenCavity ${BLAS_LIBRARIES} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} ${MPI_LIBRARIES})
 
 # Instructions for creating and running CMake files:
 #   1. Filename is "CMakeLists.txt"

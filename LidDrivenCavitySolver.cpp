@@ -5,7 +5,8 @@
 // External Libraries and Files
 #include "LidDrivenCavity.h"
 #include <boost/program_options.hpp>
-#include "cblas.h"
+#include <cblas.h>
+#include <mpi.h>
 
 namespace po = boost::program_options;
 
@@ -22,8 +23,8 @@ int main(int argc, char* argv[])
     );
     // Adding options (without default values)
     opts.add_options()
-        ("Lx", po::value<double>(),       "Length of the domain in the x-direction")
-        ("Ly", po::value<double>(),       "Length of the domain in the y-direction")
+        ("Lx", po::value<double>(), "Length of the domain in the x-direction")
+        ("Ly", po::value<double>(), "Length of the domain in the y-direction")
 
         // Positive integer checks required
         ("Nx", po::value<double>(), "Number of grid points in x-direction")
@@ -31,9 +32,9 @@ int main(int argc, char* argv[])
         ("Px", po::value<double>(), "Number of partitions in the x-direction (parallel)")
         ("Py", po::value<double>(), "Number of partitions in the y-direction (parallel)")
 
-        ("dt", po::value<double>(),        "Time step size")
-        ("T",  po::value<double>(),        "Final time")
-        ("Re", po::value<double>(),        "Reynolds number");
+        ("dt", po::value<double>(), "Time step size")
+        ("T",  po::value<double>(), "Final time")
+        ("Re", po::value<double>(), "Reynolds number");
 
     // Parse command line options and generate map of options and values
     po::variables_map vm;
