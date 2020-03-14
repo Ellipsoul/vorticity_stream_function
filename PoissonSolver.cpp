@@ -16,8 +16,8 @@ using namespace std;
 // Defining LAPACK routine for solving banded linear system
 #define F77NAME(x) x##_
 extern "C" {
-    void F77NAME(dgbsv) (const int n, const int kl, const int ku, const int &nrhs, const double * A,
-                         const int &ldab, int * piv, double * B, const int &ldb, int& info);
+    void F77NAME(dgbsv) (const int& n, const int& kl, const int& ku, const int& nrhs, const double * A,
+                         const int& ldab, int * piv, double * B, const int &ldb, int& info);
 }
 
 
@@ -75,6 +75,7 @@ void PoissonSolver::SolvePoisson(double * omega_new, int Ny, int Nx) {
         }
     }
 
+    // A Matrix Visualisation
     ofstream myfile6;
     myfile6.open("A_matrix.txt");
     for (int i=0; i<n; i++){
@@ -108,6 +109,10 @@ void PoissonSolver::SolvePoisson(double * omega_new, int Ny, int Nx) {
 
     //----------------------------------------------------------------------------------------------------------------
     // Running the solver
-    // F77NAME(dgbsv) (n, kl, ku, nrhs, A, ldab, piv, b, ldb, info);
+    F77NAME(dgbsv) (n, kl, ku, nrhs, A, ldab, piv, b, ldb, info);
+    
+    for (int i=0; i<n; i++) {
+        cout << b[i] << endl;
+    }
 
 }

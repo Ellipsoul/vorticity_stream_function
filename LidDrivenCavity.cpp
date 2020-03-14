@@ -246,6 +246,7 @@ void LidDrivenCavity::Solve(const double Lx_arg, const double Ly_arg, const doub
         //
         PoissonSolver* poisson = new PoissonSolver();
         poisson -> SolvePoisson((double*)omega_new, Ny, Nx);
+
         //---------------------------------------------------------------------------------------------------------
     }
 
