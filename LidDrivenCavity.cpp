@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <math.h>
 #include <fstream>
+#include <typeinfo>
 
 // External Libraries
 #include <cblas.h>
@@ -246,7 +247,9 @@ void LidDrivenCavity::Solve(const double Lx_arg, const double Ly_arg, const doub
         //
         PoissonSolver* poisson = new PoissonSolver();
         poisson -> SolvePoisson((double*)omega_new, Ny, Nx);
+        poisson -> PassPoisson(psi_new);
 
+        cout << psi_new[1] << endl;
         //---------------------------------------------------------------------------------------------------------
     }
 

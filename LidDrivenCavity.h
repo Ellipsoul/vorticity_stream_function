@@ -37,4 +37,6 @@ private:
     double Ly;
     double Re;
 
+    double* psi_new[];
+
 };

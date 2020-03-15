@@ -31,6 +31,7 @@ PoissonSolver::~PoissonSolver()
 {
 }
 
+// Function to solve the Poisson problem
 void PoissonSolver::SolvePoisson(double * omega_new, int Ny, int Nx) {
     
     // Writes the contents of the passed vorticity matrix into a file
@@ -110,9 +111,13 @@ void PoissonSolver::SolvePoisson(double * omega_new, int Ny, int Nx) {
     //----------------------------------------------------------------------------------------------------------------
     // Running the solver
     F77NAME(dgbsv) (n, kl, ku, nrhs, A, ldab, piv, b, ldb, info);
-    
-    for (int i=0; i<n; i++) {
-        cout << b[i] << endl;
-    }
+
+    cout << b[1] << endl;
 
 }
+
+void PoissonSolver::PassPoisson(double* psi_new[]) {
+    for (int i=0; i<n; i++) {
+        psi_new[i] = &b[i];
+    }
+} 
