@@ -271,9 +271,6 @@ void LidDrivenCavity::Solve(const double Lx_arg, const double Ly_arg, const doub
         poisson -> SolvePoisson((double*)omega_new, Ny, Nx, dx, dy);
 
         double* psi_new = new double[(Nx-2)*(Ny-2)]; 
-        psi_new = poisson -> ReturnStream();
-
-        cout << *psi_new << endl;
 
 
         //---------------------------------------------------------------------------------------------------------
