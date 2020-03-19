@@ -242,7 +242,6 @@ void LidDrivenCavity::Solve(const double Lx_arg, const double Ly_arg, const doub
         }
 
         // Vorticity and Stream-function visualisation
-
         ofstream myfile1;
         ofstream myfile2;
         ofstream myfile3;
@@ -270,9 +269,11 @@ void LidDrivenCavity::Solve(const double Lx_arg, const double Ly_arg, const doub
         //
         PoissonSolver* poisson = new PoissonSolver();
         poisson -> SolvePoisson((double*)omega_new, Ny, Nx, dx, dy);
-        double psi_new[(Nx-2)*(Ny-2)]; 
 
-        //poisson -> PassPoisson(Nx-2, Ny-2, psi_new);
+        double* psi_new = new double[(Nx-2)*(Ny-2)]; 
+        psi_new = poisson -> ReturnStream();
+
+        cout << *psi_new << endl;
 
 
         //---------------------------------------------------------------------------------------------------------

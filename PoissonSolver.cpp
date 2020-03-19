@@ -32,11 +32,11 @@ PoissonSolver::~PoissonSolver()
 }
 
 // Function to solve the Poisson problem
-void PoissonSolver::SolvePoisson(double * omega_new, int Ny, int Nx, double dx, double dy) {
+void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, double dy) {
     
     // Writes the contents of the passed vorticity matrix into a file
     ofstream myfile4;
-    myfile4.open("vorticity_trans.txt");
+    myfile4.open("vorticity_transferred.txt");
     for (int i=0; i<Ny; i++) {
         for (int j=0; j<Nx; j++) {
             myfile4 << *(omega_new + i*Nx + j) << " ";
@@ -61,7 +61,7 @@ void PoissonSolver::SolvePoisson(double * omega_new, int Ny, int Nx, double dx, 
     double* b = new double[n];         // Output vector (vorticities)
 
     //----------------------------------------------------------------------------------------------------------------
-    // Populate banded A matrix
+    // Populate banded A matrix (column major format)
     for (int i=0; i<ldab*n; i++) {
         if ((i - 2*ku)%ldab == 0) {
             A[i] = 2/(dx*dx) + 2/(dy*dy);
@@ -78,7 +78,7 @@ void PoissonSolver::SolvePoisson(double * omega_new, int Ny, int Nx, double dx, 
         }
     }
 
-    // A Matrix Visualisation
+    // A Matrix Visualisation (displayed in column major format)
     ofstream myfile6;
     myfile6.open("A_matrix.txt");
     for (int i=0; i<n; i++){
@@ -115,9 +115,11 @@ void PoissonSolver::SolvePoisson(double * omega_new, int Ny, int Nx, double dx, 
     // Running the solver
     F77NAME(dgbsv) (n, kl, ku, nrhs, A, ldab, piv, b, ldb, info);
 
+    cout << b[0] << endl;
+
     // Visualise new internal streamfunction
     ofstream myfile7;
-    myfile7.open("psi_vector.txt");
+    myfile7.open("stream_vector_new.txt");
     for (int i=0; i<(Ny-2)*(Nx-2); i++) {
         myfile7 << b[i] << endl;
     }
@@ -125,6 +127,6 @@ void PoissonSolver::SolvePoisson(double * omega_new, int Ny, int Nx, double dx, 
 
 }
 
-void PoissonSolver::PassPoisson(int Nx, int Ny, double* psi_new) {
-    cblas_dcopy(Nx*Ny, b, 1, psi_new, 1);
-} 
+double* PoissonSolver::ReturnStream() {
+    return b;
+}
