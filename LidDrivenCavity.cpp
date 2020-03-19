@@ -198,7 +198,7 @@ void LidDrivenCavity::Solve()
     int t_steps = ceil(T/dt);
 
     // Looping through every time increment
-    for (int i=1; i<t_steps/20; i++) {  // Change the max to t_steps when ready
+    for (int i=1; i<t_steps/5; i++) {  // Change the max to t_steps when ready
         
         // Calculating vorticity boundary conditions at time t
         //---------------------------------------------------------------------------------------------------------
