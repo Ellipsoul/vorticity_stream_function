@@ -198,7 +198,7 @@ void LidDrivenCavity::Solve()
     int t_steps = ceil(T/dt);
 
     // Looping through every time increment
-    for (int i=1; i<t_steps/5; i++) {  // Change the max to t_steps when ready
+    for (int i=1; i<50; i++) {  // Change the max to t_steps when ready
         
         // Calculating vorticity boundary conditions at time t
         //---------------------------------------------------------------------------------------------------------
@@ -208,10 +208,11 @@ void LidDrivenCavity::Solve()
             omega[Nx-1][j] = 2/(dy*dy) * (psi[Nx-1][j] - psi[Nx-2][j]);  // Bottom Surface
             omega_new[Nx-1][j] = omega[Nx-1][j];
         }
-        for (int j=1; j<Ny-1; j++) {
+
+        for (int j=1; j<Ny; j++) {
             omega[j][0] = 2/(dx*dx) * (psi[j][0] - psi[j][1]);           // Left Surface
             omega_new[j][0] = omega[j][0];
-            omega[j][Nx-1] = 2/(dx*dx) * (psi[j][Nx-1] - psi[j][Nx-1]);  // Right Surface
+            omega[j][Nx-1] = 2/(dx*dx) * (psi[j][Nx-1] - psi[j][Nx-2]);  // Right Surface
             omega_new[j][Nx-1] = omega[j][Nx-1];
         }
         //---------------------------------------------------------------------------------------------------------
@@ -287,6 +288,7 @@ void LidDrivenCavity::Solve()
             }
         }
 
+        // Updated stream-function matrix visualisation
         if (MPI_ROOT) {
             ofstream myfile8;
             myfile8.open("stream_matrix_new.txt");
