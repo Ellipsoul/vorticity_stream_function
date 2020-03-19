@@ -34,16 +34,19 @@ PoissonSolver::~PoissonSolver()
 // Function to solve the Poisson problem
 void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, double dy) {
     
-    // Writes the contents of the passed vorticity matrix into a file
-    ofstream myfile4;
-    myfile4.open("vorticity_transferred.txt");
-    for (int i=0; i<Ny; i++) {
-        for (int j=0; j<Nx; j++) {
-            myfile4 << *(omega_new + i*Nx + j) << " ";
+    // Visualise passed vorticity matrix into a file
+    if (MPI_ROOT) {
+        ofstream myfile4;
+        myfile4.open("vorticity_transferred.txt");
+        for (int i=0; i<Ny; i++) {
+            for (int j=0; j<Nx; j++) {
+                myfile4 << *(omega_new + i*Nx + j) << " ";
+            }
+            myfile4 << endl;
         }
-        myfile4 << endl;
+        myfile4.close();
     }
-    myfile4.close();
+
 
     // Banded matrix solver
 
@@ -56,9 +59,9 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
     int ldab = 1 + 2*kl + ku;          // Number of rows in compressed matrix
     int ldb = n;                       // Size of RHS vector
     int info;                          // Additional possible info
-    double* A = new double[ldab*n];    // Initialise banded array/matrix
-    int* piv = new int[n];             // Pivot data
-    double* b = new double[n];         // Output vector (vorticities)
+    A = new double[ldab*n];            // Initialise banded array/matrix
+    piv = new int[n];                  // Pivot data
+    b = new double[n];                 // Output vector (vorticities)
 
     //----------------------------------------------------------------------------------------------------------------
     // Populate banded A matrix (column major format)
@@ -79,20 +82,23 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
     }
 
     // A Matrix Visualisation (displayed in column major format)
-    ofstream myfile6;
-    myfile6.open("A_matrix.txt");
-    for (int i=0; i<n; i++){
-        for (int j=0; j<ldab; j++) {
-            if (A[i*ldab + j] != 0) {
-                myfile6 << A[i*ldab + j] << " ";
-            } 
-            else {
-                myfile6 << A[i*ldab + j] << "   ";
+    if (MPI_ROOT) {
+        ofstream myfile6;
+        myfile6.open("A_matrix.txt");
+        for (int i=0; i<n; i++){
+            for (int j=0; j<ldab; j++) {
+                if (A[i*ldab + j] != 0) {
+                    myfile6 << A[i*ldab + j] << " ";
+                } 
+                else {
+                    myfile6 << A[i*ldab + j] << "   ";
+                }
             }
+            myfile6 << endl;
         }
-        myfile6 << endl;
+        myfile6.close();
     }
-    myfile6.close();
+
 
     //----------------------------------------------------------------------------------------------------------------
     // Populate b vector from passed in vorticity matrix argument
@@ -115,18 +121,18 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
     // Running the solver
     F77NAME(dgbsv) (n, kl, ku, nrhs, A, ldab, piv, b, ldb, info);
 
-    cout << b[0] << endl;
-
     // Visualise new internal streamfunction
-    ofstream myfile7;
-    myfile7.open("stream_vector_new.txt");
-    for (int i=0; i<(Ny-2)*(Nx-2); i++) {
-        myfile7 << b[i] << endl;
+    if (MPI_ROOT) {
+        ofstream myfile7;
+        myfile7.open("stream_vector_new.txt");
+        for (int i=0; i<(Ny-2)*(Nx-2); i++) {
+            myfile7 << b[i] << endl;
+        }
+        myfile7.close();
     }
-    myfile7.close();
 
 }
 
-double* PoissonSolver::ReturnStream() {
-    return b;
+void PoissonSolver::ReturnStream(double * psi_new, int Nx, int Ny) {
+    cblas_dcopy((Nx-2)*(Ny-2), b, 1, psi_new, 1);
 }

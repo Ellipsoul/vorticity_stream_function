@@ -111,14 +111,11 @@ void LidDrivenCavity::SetPartitions(double px, double py, int nx, int ny)
     Py = int(py);
 }
 
-// Initialising variables and outputting errors
-void LidDrivenCavity::Solve(const double Lx_arg, const double Ly_arg, const double Nx_arg, const double Ny_arg,
+// Perform argument checks and assign into variable if passed
+void LidDrivenCavity::Verify(const double Lx_arg, const double Ly_arg, const double Nx_arg, const double Ny_arg,
                                 const double Px_arg, const double Py_arg, const double dt_arg, const double T_arg, 
-                                const double Re_arg)
-{  
-    // Perform argument checks and assign into variable if passed
-    //--------------------------------------------------------------------------------------------------------------
-
+                                const double Re_arg) 
+{
     // Set cavity/domain size
     try {
         SetDomainSize(Lx_arg, Ly_arg);
@@ -172,11 +169,11 @@ void LidDrivenCavity::Solve(const double Lx_arg, const double Ly_arg, const doub
         cout << "Error: " << e.what() << endl;
         exit(EXIT_FAILURE);
     }
-    //--------------------------------------------------------------------------------------------------------------
+}
 
-    // Implementing solver
-    //--------------------------------------------------------------------------------------------------------------
-
+// Solver implementation
+void LidDrivenCavity::Solve()
+{  
     // Initial conditions
     const int Nx_const = Nx;
     const int Ny_const = Ny;
@@ -242,35 +239,43 @@ void LidDrivenCavity::Solve(const double Lx_arg, const double Ly_arg, const doub
         }
 
         // Vorticity and Stream-function visualisation
-        ofstream myfile1;
-        ofstream myfile2;
-        ofstream myfile3;
-        myfile1.open("stream_old.txt");
-        myfile2.open("vorticity_old.txt");
-        myfile3.open("vorticity_new.txt");
-        for (int i=0; i<Nx; i++){
-            for (int j=0; j<Nx; j++) {
-                myfile1 << psi[i][j] << " ";
-                myfile2 << omega[i][j] << " ";
-                myfile3 << omega_new[i][j] << " ";
+        if (MPI_ROOT) {
+            ofstream myfile1;
+            ofstream myfile2;
+            ofstream myfile3;
+            myfile1.open("stream_old.txt");
+            myfile2.open("vorticity_old.txt");
+            myfile3.open("vorticity_new.txt");
+            for (int i=0; i<Nx; i++){
+                for (int j=0; j<Nx; j++) {
+                    myfile1 << psi[i][j] << " ";
+                    myfile2 << omega[i][j] << " ";
+                    myfile3 << omega_new[i][j] << " ";
+                }
+                myfile1 << endl;
+                myfile2 << endl;
+                myfile3 << endl;
             }
-            myfile1 << endl;
-            myfile2 << endl;
-            myfile3 << endl;
+            myfile1.close();
+            myfile2.close();
+            myfile3.close();
         }
-        myfile1.close();
-        myfile2.close();
-        myfile3.close();
+
 
         //---------------------------------------------------------------------------------------------------------
 
         // Solve the Poisson problem to calculate stream-function at time t + dt
         //---------------------------------------------------------------------------------------------------------        
-        //
+        
+        // Create new instance of the Poisson Solver
         PoissonSolver* poisson = new PoissonSolver();
+
+        // Solve the poisson problem
         poisson -> SolvePoisson((double*)omega_new, Ny, Nx, dx, dy);
 
-        double* psi_new = new double[(Nx-2)*(Ny-2)]; 
+        // Retrieve values for the new streamfunction
+        psi_new = new double[(Nx-2)*(Ny-2)];
+        poisson -> ReturnStream(psi_new, Nx, Ny);
 
 
         //---------------------------------------------------------------------------------------------------------

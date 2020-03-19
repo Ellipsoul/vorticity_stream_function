@@ -29,6 +29,7 @@ int main(int argc, char* argv[])
 {
 
     // Initialise MPI
+    //---------------------------------------------------------------------------------------------------------
 
     // Initialise MPI environment
     MPI_Init(&argc, &argv);
@@ -46,6 +47,7 @@ int main(int argc, char* argv[])
  
     // Helping variables
     int iZERO = 0;
+    //---------------------------------------------------------------------------------------------------------
 
     // Create a new instance of the LidDrivenCavity class
     // Uses a pointer so solver is actually storing the address of the new instance
@@ -87,9 +89,13 @@ int main(int argc, char* argv[])
     const double T_arg  = vm["T"].as<double>();
     const double Re_arg = vm["Re"].as<double>();
 
-    // Configure and run solver
-    // Arrow dereferences and initialises the solver at that address
-    solver -> Solve(Lx_arg, Ly_arg, Nx_arg, Ny_arg, Px_arg, Py_arg, dt_arg, T_arg, Re_arg);
+    // Verify and set command line inputs
+    solver -> Verify(Lx_arg, Ly_arg, Nx_arg, Ny_arg, Px_arg, Py_arg, dt_arg, T_arg, Re_arg);
+    if (mpiroot) {
+        cout << "All command line input checks passed" << endl;
+    }
+
+    solver -> Solve();
  
  
 	MPI_Finalize();
