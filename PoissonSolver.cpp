@@ -32,7 +32,7 @@ PoissonSolver::~PoissonSolver()
 }
 
 // Function to solve the Poisson problem
-void PoissonSolver::SolvePoisson(double * omega_new, int Ny, int Nx) {
+void PoissonSolver::SolvePoisson(double * omega_new, int Ny, int Nx, double dx, double dy) {
     
     // Writes the contents of the passed vorticity matrix into a file
     ofstream myfile4;
@@ -64,12 +64,14 @@ void PoissonSolver::SolvePoisson(double * omega_new, int Ny, int Nx) {
     // Populate banded A matrix
     for (int i=0; i<ldab*n; i++) {
         if ((i - 2*ku)%ldab == 0) {
-            A[i] = 4;
+            A[i] = 2/(dx*dx) + 2/(dy*dy);
         }
-        else if ( ((i-ku)%ldab==0 & i > ku*ldab+1) || ((i+1)%ldab==0 & i < (n-ku)*ldab) || 
-                  (i<ldab*n-ku & (i-2*ku-1)%ldab == 0 & (i+ku)%(ldab*ku)!=0) ||
+        else if ( ((i-ku)%ldab==0 & i > ku*ldab+1) || ((i+1)%ldab==0 & i < (n-ku)*ldab) ) {
+            A[i] = -1/(dx*dx);
+        }
+        else if ( (i<ldab*n-ku & (i-2*ku-1)%ldab == 0 & (i+ku)%(ldab*ku)!=0) ||
                   (i>2*ku-1 & (i-2*ku+1)%ldab ==0 & (i-2*ku+1)%(ldab*ku)!=0) ) {
-            A[i] = -1;
+            A[i] = -1/(dy*dy);
         }
         else {
             A[i] = 0;
@@ -81,11 +83,11 @@ void PoissonSolver::SolvePoisson(double * omega_new, int Ny, int Nx) {
     myfile6.open("A_matrix.txt");
     for (int i=0; i<n; i++){
         for (int j=0; j<ldab; j++) {
-            if (A[i*ldab + j] == -1) {
+            if (A[i*ldab + j] != 0) {
                 myfile6 << A[i*ldab + j] << " ";
             } 
             else {
-                myfile6 << A[i*ldab + j] << "  ";
+                myfile6 << A[i*ldab + j] << "   ";
             }
         }
         myfile6 << endl;
@@ -106,18 +108,23 @@ void PoissonSolver::SolvePoisson(double * omega_new, int Ny, int Nx) {
             myfile5 << b[(Ny-2)*(i-1)+(j-1)] << endl;
         }
     }
+
     myfile5.close();
 
     //----------------------------------------------------------------------------------------------------------------
     // Running the solver
     F77NAME(dgbsv) (n, kl, ku, nrhs, A, ldab, piv, b, ldb, info);
 
-    cout << b[1] << endl;
+    // Visualise new internal streamfunction
+    ofstream myfile7;
+    myfile7.open("psi_vector.txt");
+    for (int i=0; i<(Ny-2)*(Nx-2); i++) {
+        myfile7 << b[i] << endl;
+    }
+    myfile7.close();
 
 }
 
-void PoissonSolver::PassPoisson(double* psi_new[]) {
-    for (int i=0; i<n; i++) {
-        psi_new[i] = &b[i];
-    }
+void PoissonSolver::PassPoisson(int Nx, int Ny, double* psi_new) {
+    cblas_dcopy(Nx*Ny, b, 1, psi_new, 1);
 } 

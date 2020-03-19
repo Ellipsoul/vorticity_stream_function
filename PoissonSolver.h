@@ -9,8 +9,8 @@ class PoissonSolver
     PoissonSolver();
     ~PoissonSolver();
 
-    void SolvePoisson(double * omega_new, int Ny, int Nx);
-    void PassPoisson(double* psi_new[]);
+    void SolvePoisson(double * omega_new, int Ny, int Nx, double dx, double dy);
+    void PassPoisson(int Nx, int Ny, double* psi_new);
 
     private:
     double* b;

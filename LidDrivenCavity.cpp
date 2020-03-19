@@ -195,8 +195,8 @@ void LidDrivenCavity::Solve(const double Lx_arg, const double Ly_arg, const doub
     }
 
     // Useful variables
-    double dx = Lx/Nx;
-    double dy = Ly/Ny;
+    double dx = Lx/(Nx-1);
+    double dy = Ly/(Ny-1);
     double U = 1.0;
     int t_steps = ceil(T/dt);
 
@@ -233,45 +233,49 @@ void LidDrivenCavity::Solve(const double Lx_arg, const double Ly_arg, const doub
         //---------------------------------------------------------------------------------------------------------
         for (int j=1; j<Nx-1; j++) {
             for (int k=1; k<Ny-1; k++) {
-                omega_new[j][k] = ( (1/Re)*( (omega[j-1][k]-2*omega[j][k]+omega[j+1][k])/(dx*dx) + 
-                                    (omega[j][k+1]-2*omega[j][k]+omega[j][k-1]) ) + 
-                                    (psi[j-1][k]-psi[j+1][k])/(2*dx)*(omega[j][k+1]-omega[j][k-1])/(2*dy) -
-                                    (psi[j][k+1]-psi[j][k-1])/(2*dy)*(omega[j-1][k]-omega[j+1][k])/(2*dx) ) * dt +
+                omega_new[j][k] = ( (1/Re)* ( (omega[j-1][k]-2*omega[j][k]+omega[j+1][k])/(dx*dx) + 
+                                    (omega[j][k+1]-2*omega[j][k]+omega[j][k-1])/(dy*dy) ) + 
+                                    (psi[j-1][k]-psi[j+1][k])/(2*dx) * (omega[j][k+1]-omega[j][k-1])/(2*dy) -
+                                    (psi[j][k+1]-psi[j][k-1])/(2*dy) * (omega[j-1][k]-omega[j+1][k])/(2*dx) ) * dt +
                                     omega[j][k];
             }
         }
+
+        // Vorticity and Stream-function visualisation
+
+        ofstream myfile1;
+        ofstream myfile2;
+        ofstream myfile3;
+        myfile1.open("stream_old.txt");
+        myfile2.open("vorticity_old.txt");
+        myfile3.open("vorticity_new.txt");
+        for (int i=0; i<Nx; i++){
+            for (int j=0; j<Nx; j++) {
+                myfile1 << psi[i][j] << " ";
+                myfile2 << omega[i][j] << " ";
+                myfile3 << omega_new[i][j] << " ";
+            }
+            myfile1 << endl;
+            myfile2 << endl;
+            myfile3 << endl;
+        }
+        myfile1.close();
+        myfile2.close();
+        myfile3.close();
+
         //---------------------------------------------------------------------------------------------------------
 
         // Solve the Poisson problem to calculate stream-function at time t + dt
         //---------------------------------------------------------------------------------------------------------        
         //
         PoissonSolver* poisson = new PoissonSolver();
-        poisson -> SolvePoisson((double*)omega_new, Ny, Nx);
-        poisson -> PassPoisson(psi_new);
+        poisson -> SolvePoisson((double*)omega_new, Ny, Nx, dx, dy);
+        double psi_new[(Nx-2)*(Ny-2)]; 
 
-        cout << psi_new[1] << endl;
+        //poisson -> PassPoisson(Nx-2, Ny-2, psi_new);
+
+
         //---------------------------------------------------------------------------------------------------------
     }
-
-    // Writing the vorticity and streamfunction values to a file for observation
-    ofstream myfile1;
-    ofstream myfile2;
-    ofstream myfile3;
-    myfile1.open("stream.txt");
-    myfile2.open("vorticity.txt");
-    myfile3.open("vorticity_new.txt");
-    for (int i=0; i<Nx; i++){
-        for (int j=0; j<Nx; j++) {
-            myfile1 << psi[i][j] << " ";
-            myfile2 << omega[i][j] << " ";
-            myfile3 << omega_new[i][j] << " ";
-        }
-        myfile1 << endl;
-        myfile2 << endl;
-        myfile3 << endl;
-    }
-    myfile1.close();
-    myfile2.close();
-    myfile3.close();
 
 }

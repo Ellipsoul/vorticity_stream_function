@@ -12,6 +12,7 @@ namespace po = boost::program_options;
 
 int main(int argc, char* argv[])
 {
+
     // Create a new instance of the LidDrivenCavity class
     // Uses a pointer so solver is actually storing the address of the new instance
     LidDrivenCavity* solver = new LidDrivenCavity();
@@ -55,6 +56,7 @@ int main(int argc, char* argv[])
     // Configure and run solver
     // Arrow dereferences and initialises the solver at that address
     solver -> Solve(Lx_arg, Ly_arg, Nx_arg, Ny_arg, Px_arg, Py_arg, dt_arg, T_arg, Re_arg);
+ 
  
 	return 0;
 }
