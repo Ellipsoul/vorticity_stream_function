@@ -198,7 +198,7 @@ void LidDrivenCavity::Solve()
     int t_steps = ceil(T/dt);
 
     // Looping through every time increment
-    for (int i=1; i<2; i++) {  // Change the max to t_steps when ready
+    for (int i=1; i<t_steps/20; i++) {  // Change the max to t_steps when ready
         
         // Calculating vorticity boundary conditions at time t
         //---------------------------------------------------------------------------------------------------------
@@ -243,11 +243,11 @@ void LidDrivenCavity::Solve()
             ofstream myfile1;
             ofstream myfile2;
             ofstream myfile3;
-            myfile1.open("stream_old.txt");
-            myfile2.open("vorticity_old.txt");
-            myfile3.open("vorticity_new.txt");
+            myfile1.open("stream_matrix_old.txt");
+            myfile2.open("vorticity_matrix_old.txt");
+            myfile3.open("vorticity_matrix_new.txt");
             for (int i=0; i<Nx; i++){
-                for (int j=0; j<Nx; j++) {
+                for (int j=0; j<Ny; j++) {
                     myfile1 << psi[i][j] << " ";
                     myfile2 << omega[i][j] << " ";
                     myfile3 << omega_new[i][j] << " ";
@@ -260,7 +260,6 @@ void LidDrivenCavity::Solve()
             myfile2.close();
             myfile3.close();
         }
-
 
         //---------------------------------------------------------------------------------------------------------
 
@@ -277,8 +276,60 @@ void LidDrivenCavity::Solve()
         psi_new = new double[(Nx-2)*(Ny-2)];
         poisson -> ReturnStream(psi_new, Nx, Ny);
 
-
         //---------------------------------------------------------------------------------------------------------
+
+        // Update the the stream-function into the original psi matrix
+        //--------------------------------------------------------------------------------------------------------- 
+
+        for (int i=1; i<Ny-1; i++) {
+            for (int j=1; j<Nx-1; j++) {
+                psi[i][j] = psi_new[(Ny-2)*(i-1) + (j-1)];
+            }
+        }
+
+        if (MPI_ROOT) {
+            ofstream myfile8;
+            myfile8.open("stream_matrix_new.txt");
+            
+            for (int i=0; i<Nx; i++) {
+                for (int j=0; j<Ny; j++) {
+                    myfile8 << psi[i][j] << " ";
+                }
+                myfile8 << endl;
+            }
+            myfile8.close();
+        }
+
+        //---------------------------------------------------------------------------------------------------------    
+
+    }
+
+    // Final streamfunction matrix found, solving for velocities
+    
+    double u[Ny-1][Nx];
+    double v[Nx][Ny-1];
+
+    // u velocity (+ visualisation)
+    ofstream myfile9;
+    myfile9.open("u_velocity.txt");
+    for (int i=0; i<Ny-1; i++) {
+        for (int j=0; j<Nx; j++) {
+            u[i][j] = (psi[i][j] - psi[i+1][j])/dy;
+            myfile9 << u[i][j] << " ";
+        }
+        myfile9 << endl;
+    }
+    myfile9.close();
+
+    // v velocity (+ visualisation)
+    ofstream myfile10;
+    myfile10.open("v_velocity.txt");
+    for (int i=0; i<Ny; i++) {
+        for (int j=0; j<Nx-1; j++) {
+            v[i][j] = (psi[i][j+1] - psi[i][j])/dx;
+            myfile10 << v[i][j] << " ";
+        }
+        myfile10 << endl;
     }
 
 }

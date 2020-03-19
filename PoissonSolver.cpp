@@ -37,7 +37,7 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
     // Visualise passed vorticity matrix into a file
     if (MPI_ROOT) {
         ofstream myfile4;
-        myfile4.open("vorticity_transferred.txt");
+        myfile4.open("vorticity_matrix_old_trans.txt");
         for (int i=0; i<Ny; i++) {
             for (int j=0; j<Nx; j++) {
                 myfile4 << *(omega_new + i*Nx + j) << " ";
@@ -69,11 +69,11 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
         if ((i - 2*ku)%ldab == 0) {
             A[i] = 2/(dx*dx) + 2/(dy*dy);
         }
-        else if ( ((i-ku)%ldab==0 & i > ku*ldab+1) || ((i+1)%ldab==0 & i < (n-ku)*ldab) ) {
+        else if ( ((i-ku)%ldab==0 && i > ku*ldab+1) || ((i+1)%ldab==0 && i < (n-ku)*ldab) ) {
             A[i] = -1/(dx*dx);
         }
-        else if ( (i<ldab*n-ku & (i-2*ku-1)%ldab == 0 & (i+ku)%(ldab*ku)!=0) ||
-                  (i>2*ku-1 & (i-2*ku+1)%ldab ==0 & (i-2*ku+1)%(ldab*ku)!=0) ) {
+        else if ( (i<ldab*n-ku && (i-2*ku-1)%ldab == 0 && (i+ku)%(ldab*ku)!=0) ||
+                  (i>2*ku-1 && (i-2*ku+1)%ldab ==0 && (i-2*ku+1)%(ldab*ku)!=0) ) {
             A[i] = -1/(dy*dy);
         }
         else {
@@ -106,7 +106,7 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
     // Incremement index by column, then by row
     double* vorticity_vec[n];
     ofstream myfile5;
-    myfile5.open("vorticity_vector.txt");
+    myfile5.open("b_vector.txt");
     for (int i=1; i<Ny-1; i++) {
         for (int j=1; j<Nx-1; j++) {
             vorticity_vec[(Ny*(i-1))+(j-1)] = (omega_new +i*Nx +j);
