@@ -14,7 +14,7 @@ omega = dlmread("build/omega_final.txt");
 figure
 psi_contour = contourf(flipud(psi))
 figure
-omega_contour = contourf(omega)
+omega_contour = contourf(flipud(omega))
 figure
 u_contour = contourf(flipud(u))
 figure
