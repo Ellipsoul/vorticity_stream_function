@@ -9,6 +9,7 @@
 #include <math.h>
 #include <fstream>
 #include <typeinfo>
+#include <chrono>
 
 // External Libraries
 #include <cblas.h>
@@ -174,6 +175,9 @@ void LidDrivenCavity::Verify(const double Lx_arg, const double Ly_arg, const dou
 // Solver implementation
 void LidDrivenCavity::Solve()
 {  
+    // Start timer
+    auto start = chrono::high_resolution_clock::now();
+
     // Initial conditions
     const int Nx_const = Nx;
     const int Ny_const = Ny;
@@ -198,7 +202,7 @@ void LidDrivenCavity::Solve()
     int t_steps = ceil(T/dt);
 
     // Looping through every time increment
-    for (int i=1; i<50; i++) {  // Change the max to t_steps when ready
+    for (int i=1; i<t_steps; i++) {  // Change the max to t_steps when ready
         
         // Calculating vorticity boundary conditions at time t
         //---------------------------------------------------------------------------------------------------------
@@ -240,27 +244,27 @@ void LidDrivenCavity::Solve()
         }
 
         // Vorticity and Stream-function visualisation
-        if (MPI_ROOT) {
-            ofstream myfile1;
-            ofstream myfile2;
-            ofstream myfile3;
-            myfile1.open("stream_matrix_old.txt");
-            myfile2.open("vorticity_matrix_old.txt");
-            myfile3.open("vorticity_matrix_new.txt");
-            for (int i=0; i<Nx; i++){
-                for (int j=0; j<Ny; j++) {
-                    myfile1 << psi[i][j] << " ";
-                    myfile2 << omega[i][j] << " ";
-                    myfile3 << omega_new[i][j] << " ";
-                }
-                myfile1 << endl;
-                myfile2 << endl;
-                myfile3 << endl;
-            }
-            myfile1.close();
-            myfile2.close();
-            myfile3.close();
-        }
+        // if (MPI_ROOT) {
+        //     ofstream myfile1;
+        //     ofstream myfile2;
+        //     ofstream myfile3;
+        //     myfile1.open("stream_matrix_old.txt");
+        //     myfile2.open("vorticity_matrix_old.txt");
+        //     myfile3.open("vorticity_matrix_new.txt");
+        //     for (int i=0; i<Nx; i++){
+        //         for (int j=0; j<Ny; j++) {
+        //             myfile1 << psi[i][j] << " ";
+        //             myfile2 << omega[i][j] << " ";
+        //             myfile3 << omega_new[i][j] << " ";
+        //         }
+        //         myfile1 << endl;
+        //         myfile2 << endl;
+        //         myfile3 << endl;
+        //     }
+        //     myfile1.close();
+        //     myfile2.close();
+        //     myfile3.close();
+        // }
 
         //---------------------------------------------------------------------------------------------------------
 
@@ -277,6 +281,9 @@ void LidDrivenCavity::Solve()
         psi_new = new double[(Nx-2)*(Ny-2)];
         poisson -> ReturnStream(psi_new, Nx, Ny);
 
+        // Run destructor for instance
+        poisson -> ~PoissonSolver();
+
         //---------------------------------------------------------------------------------------------------------
 
         // Update the the stream-function into the original psi matrix
@@ -289,18 +296,18 @@ void LidDrivenCavity::Solve()
         }
 
         // Updated stream-function matrix visualisation
-        if (MPI_ROOT) {
-            ofstream myfile8;
-            myfile8.open("stream_matrix_new.txt");
+        // if (MPI_ROOT) {
+        //     ofstream myfile8;
+        //     myfile8.open("stream_matrix_new.txt");
             
-            for (int i=0; i<Nx; i++) {
-                for (int j=0; j<Ny; j++) {
-                    myfile8 << psi[i][j] << " ";
-                }
-                myfile8 << endl;
-            }
-            myfile8.close();
-        }
+        //     for (int i=0; i<Nx; i++) {
+        //         for (int j=0; j<Ny; j++) {
+        //             myfile8 << psi[i][j] << " ";
+        //         }
+        //         myfile8 << endl;
+        //     }
+        //     myfile8.close();
+        // }
 
         //---------------------------------------------------------------------------------------------------------    
 
@@ -312,26 +319,48 @@ void LidDrivenCavity::Solve()
     double v[Nx][Ny-1];
 
     // u velocity (+ visualisation)
-    ofstream myfile9;
-    myfile9.open("u_velocity.txt");
+    ofstream u_file;
+    u_file.open("u_velocity.txt");
     for (int i=0; i<Ny-1; i++) {
         for (int j=0; j<Nx; j++) {
             u[i][j] = (psi[i][j] - psi[i+1][j])/dy;
-            myfile9 << u[i][j] << " ";
+            u_file << u[i][j] << " ";
         }
-        myfile9 << endl;
+        u_file << endl;
     }
-    myfile9.close();
+    u_file.close();
 
     // v velocity (+ visualisation)
-    ofstream myfile10;
-    myfile10.open("v_velocity.txt");
+    ofstream v_file;
+    v_file.open("v_velocity.txt");
     for (int i=0; i<Ny; i++) {
         for (int j=0; j<Nx-1; j++) {
             v[i][j] = (psi[i][j+1] - psi[i][j])/dx;
-            myfile10 << v[i][j] << " ";
+            v_file << v[i][j] << " ";
         }
-        myfile10 << endl;
+        v_file << endl;
     }
+    v_file.close();
+
+    // Final streamfunction and vorticity matrices
+    ofstream psi_file;
+    ofstream omega_file;
+    psi_file.open("psi_final.txt");
+    omega_file.open("omega_final.txt");
+    for (int i=0; i<Nx; i++) {
+        for (int j=0; j<Ny; j++) {
+            psi_file << psi[i][j] << " ";
+            omega_file << omega[i][j] << " ";
+        }
+        psi_file << endl;
+        omega_file << endl;
+    }
+    psi_file.close();
+    omega_file.close();
+
+    // Stop timer and calculate code runtime duration
+    auto stop = chrono::high_resolution_clock::now();
+    auto duration = chrono::duration_cast<chrono::milliseconds>(stop - start);
+    cout << "Elapsed execution duration: " << duration.count() << " milliseconds" << endl;
 
 }

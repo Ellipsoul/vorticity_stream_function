@@ -29,23 +29,26 @@ PoissonSolver::PoissonSolver()
 // Destructor
 PoissonSolver::~PoissonSolver()
 {
+    delete[] A;
+    delete[] b;
+    delete piv;
 }
 
 // Function to solve the Poisson problem
 void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, double dy) {
     
     // Visualise passed vorticity matrix into a file
-    if (MPI_ROOT) {
-        ofstream myfile4;
-        myfile4.open("vorticity_matrix_old_trans.txt");
-        for (int i=0; i<Ny; i++) {
-            for (int j=0; j<Nx; j++) {
-                myfile4 << *(omega_new + i*Nx + j) << " ";
-            }
-            myfile4 << endl;
-        }
-        myfile4.close();
-    }
+    // if (MPI_ROOT) {
+    //     ofstream myfile4;
+    //     myfile4.open("vorticity_matrix_old_trans.txt");
+    //     for (int i=0; i<Ny; i++) {
+    //         for (int j=0; j<Nx; j++) {
+    //             myfile4 << *(omega_new + i*Nx + j) << " ";
+    //         }
+    //         myfile4 << endl;
+    //     }
+    //     myfile4.close();
+    // }
 
 
     // Banded matrix solver
@@ -82,22 +85,22 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
     }
 
     // A Matrix Visualisation (displayed in column major format)
-    if (MPI_ROOT) {
-        ofstream myfile6;
-        myfile6.open("A_matrix.txt");
-        for (int i=0; i<n; i++){
-            for (int j=0; j<ldab; j++) {
-                if (A[i*ldab + j] != 0) {
-                    myfile6 << A[i*ldab + j] << " ";
-                } 
-                else {
-                    myfile6 << A[i*ldab + j] << "   ";
-                }
-            }
-            myfile6 << endl;
-        }
-        myfile6.close();
-    }
+    // if (MPI_ROOT) {
+    //     ofstream myfile6;
+    //     myfile6.open("A_matrix.txt");
+    //     for (int i=0; i<n; i++){
+    //         for (int j=0; j<ldab; j++) {
+    //             if (A[i*ldab + j] != 0) {
+    //                 myfile6 << A[i*ldab + j] << " ";
+    //             } 
+    //             else {
+    //                 myfile6 << A[i*ldab + j] << "   ";
+    //             }
+    //         }
+    //         myfile6 << endl;
+    //     }
+    //     myfile6.close();
+    // }
 
 
     //----------------------------------------------------------------------------------------------------------------
@@ -105,31 +108,30 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
     // Convert the vorticity matrix into a long vector (exclude vorticities in the boundaries)
     // Incremement index by column, then by row
     double* vorticity_vec[n];
-    ofstream myfile5;
-    myfile5.open("b_vector.txt");
+    // ofstream myfile5;
+    // myfile5.open("b_vector.txt");
     for (int i=1; i<Ny-1; i++) {
         for (int j=1; j<Nx-1; j++) {
             vorticity_vec[(Ny*(i-1))+(j-1)] = (omega_new +i*Nx +j);
             b[(Ny-2)*(i-1)+(j-1)] = *vorticity_vec[(Ny*(i-1))+(j-1)];
-            myfile5 << b[(Ny-2)*(i-1)+(j-1)] << endl;
+            // myfile5 << b[(Ny-2)*(i-1)+(j-1)] << endl;
         }
     }
-
-    myfile5.close();
+    // myfile5.close();
 
     //----------------------------------------------------------------------------------------------------------------
     // Running the solver
     F77NAME(dgbsv) (n, kl, ku, nrhs, A, ldab, piv, b, ldb, info);
 
     // Visualise new internal streamfunction
-    if (MPI_ROOT) {
-        ofstream myfile7;
-        myfile7.open("stream_vector_new.txt");
-        for (int i=0; i<(Ny-2)*(Nx-2); i++) {
-            myfile7 << b[i] << endl;
-        }
-        myfile7.close();
-    }
+    // if (MPI_ROOT) {
+    //     ofstream myfile7;
+    //     myfile7.open("stream_vector_new.txt");
+    //     for (int i=0; i<(Ny-2)*(Nx-2); i++) {
+    //         myfile7 << b[i] << endl;
+    //     }
+    //     myfile7.close();
+    // }
 
 }
 
