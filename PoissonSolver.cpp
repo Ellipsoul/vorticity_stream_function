@@ -16,25 +16,26 @@ using namespace std;
 // Setting up BLACS grid
 extern "C" {
     // CBlacs Declarations
+    // Output parameters have a * while input parameters do not
     void Cblacs_pinfo(int*, int*);
     void Cblacs_get(int, int, int*);
     void Cblacs_gridinit(int*, const char*, int, int);
-    void Cblacs_pcoord(int, int, int*, int*);
+    void Cblacs_gridinfo(int, int*, int*, int*, int*);
+    // void Cblacs_pcoord(int, int, int*, int*);
     void Cblacs_gridexit(int);
-    void Cblacs_barrier(int, const char*);
-    void Cdgerv2d(int, int, int, double*, int, int, int);
-    void Cdgesd2d(int, int, int, double*, int, int, int);
- 
-    int numroc_(int*, int*, int*, int*, int*);
+    // void Cblacs_barrier(int, const char*);
+    // void Cdgerv2d(int, int, int, double*, int, int, int);
+    // void Cdgesd2d(int, int, int, double*, int, int, int);
+    // int numroc_(int*, int*, int*, int*, int*);
 }
 
 // Defining LAPACK routine for solving banded linear system
 #define F77NAME(x) x##_
 extern "C" {
-    void F77NAME(dgbsv) (const int& n, const int& kl, const int& ku, const int& nrhs, const double * A,
-                         const int& ldab, int * piv, double * B, const int &ldb, int& info);
+    void F77NAME(pdgbsv) (const int& N, const int& BWL, const int& BWU, const int& NRHS, double * A,
+                          const int& JA, int * desca, int * ipiv, double * x, const int& IB, int * descb,
+                          double * work, const int& LW, int& info) ;
 }
-
 
 // Constructor
 PoissonSolver::PoissonSolver()
@@ -65,6 +66,93 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
     //     myfile4.close();
     // }
 
+    // Initialise CBLACS
+    //---------------------------------------------------------------------------------------------------------
+
+    // Initialise CBLACS for Parallel Linear Algebra
+    int mype, npe, ctx, nrow, ncol, myrow, mycol;
+    char order; 
+    // Initialises the BLACS world communicator (calls MPI_Init if needed)
+    Cblacs_pinfo(&mype, &npe);
+    // Get the default system context (i.e. MPI_COMM_WORLD)
+    Cblacs_get( 0, 0, &ctx );
+    // Initialise a process grid of 1 rows and npe columns
+    Cblacs_gridinit( &ctx, &order, 1, npe );
+    // Get info about the grid to verify it is set up
+    Cblacs_gridinfo( ctx, &nrow, &ncol, &myrow, &mycol);
+
+    //---------------------------------------------------------------------------------------------------------
+
+    // Initialise MPI
+    //---------------------------------------------------------------------------------------------------------
+
+    // Get number of processes
+    int world_size;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+    // Get rank of process
+    int mpirank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);
+
+    // True (1) if process is the root process 
+    bool mpiroot = (mpirank == 0);
+    //---------------------------------------------------------------------------------------------------------
+
+    // Parallel Banded Matrix Solver
+    //---------------------------------------------------------------------------------------------------------
+    int info;                                   // Status value
+    const int N    = (Nx-2)*(Ny-2);             // Total problem size
+    const int NB   = 4;                         // Blocking size (number of columns per process)
+    const int BWL  = Nx-2;                      // Lower bandwidth
+    const int BWU  = Nx-2;                      // Upper bandwidth
+    const int NRHS = 1;                         // Number of RHS to solve
+    const int JA   = 1;                         // Start offset in matrix (to use just a submatrix)
+    const int IB   = 1;                         // Start offset in RHS vector (to use just a subvector)
+    const int LA   = (1 + 2*BWL + 2*BWU)*NB;    // ScaLAPACK documentation
+    const int LW   = (NB+BWU)*(BWL+BWU)+6*(BWL+BWU)*(BWL+2*BWU) + max(NRHS*(NB+2*BWL+4*BWU), 1); 
+  
+    double* A    = new double[LA];   // Matrix banded storage
+    int*    ipiv = new int   [NB];   // Pivoting array
+    double* x    = new double[NB];   // In: RHS vector, Out: Solution
+    double* work = new double[LW];   // Workspace
+
+    int desca[7];             // Descriptor for banded matrix
+    desca[0] = 501;           // Type
+    desca[1] = ctx;           // Context
+    desca[2] = N;             // Problem size
+    desca[3] = NB;            // Blocking of matrix
+    desca[4] = 0;             // Process row/column
+    desca[5] = 1+2*BWL+2*BWU; // Local leading dim
+    desca[6] = 0;             // Reserved
+
+    int descb[7];             // Descriptor for RHS
+    descb[0] = 502;           // Type
+    descb[1] = ctx;           // Context
+    descb[2] = N;             // Problem size
+    descb[3] = NB;            // Blocking of matrix
+    descb[4] = 0;             // Process row/column
+    descb[5] = NB;            // Local leading dim
+    descb[6] = 0;             // Reserved
+
+    // Populate banded A and x here 
+    
+    // ... Set up CBLACS grid
+
+    // Perform the parallel solve.
+    F77NAME(pdgbsv) (N, BWL, BWU, NRHS, A, JA, desca, ipiv, &x[0], IB, descb, work, LW, info);
+
+    // Verify it completed successfully.
+    if (info) {
+    cout << "Error occurred in PDGBTRS: " << info << endl;
+    }
+    //---------------------------------------------------------------------------------------------------------
+
+    // Finalize CBLACS and clean up memory
+    //---------------------------------------------------------------------------------------------------------
+
+    // pass
+
+    //---------------------------------------------------------------------------------------------------------
 
     // Banded matrix solver
 
@@ -133,10 +221,6 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
         }
     }
     // myfile5.close();
-
-    //----------------------------------------------------------------------------------------------------------------
-    // Running the solver
-    F77NAME(dgbsv) (n, kl, ku, nrhs, A, ldab, piv, b, ldb, info);
 
     // Visualise new internal streamfunction
     // if (MPI_ROOT) {

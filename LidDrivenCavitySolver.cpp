@@ -12,28 +12,6 @@ namespace po = boost::program_options;
 
 int main(int argc, char* argv[])
 {
-
-    // Initialise MPI
-    //---------------------------------------------------------------------------------------------------------
-
-    // Initialise MPI environment
-    MPI_Init(&argc, &argv);
-
-    // Get number of processes
-    int world_size;
-    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-
-    // Get rank of process
-    int mpirank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);
-
-    // True (1) if process is the root process 
-    bool mpiroot = (mpirank == 0);
- 
-    // Helping variables
-    int iZERO = 0;
-    //---------------------------------------------------------------------------------------------------------
-
     // Create a new instance of the LidDrivenCavity class
     // Uses a pointer so solver is actually storing the address of the new instance
     LidDrivenCavity* solver = new LidDrivenCavity();
@@ -76,12 +54,9 @@ int main(int argc, char* argv[])
 
     // Verify and set command line inputs
     solver -> Verify(Lx_arg, Ly_arg, Nx_arg, Ny_arg, Px_arg, Py_arg, dt_arg, T_arg, Re_arg);
-    if (mpiroot) {
-        cout << "All command line input checks passed" << endl;
-    }
+    cout << "All command line input checks passed" << endl;
 
+    // Execute solver
     solver -> Solve();
  
- 
-	MPI_Finalize();
 }
