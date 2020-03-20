@@ -19,5 +19,8 @@ figure
 u_contour = contourf(flipud(u))
 figure
 v_contour = contourf(flipud(v))
+
 figure
-plot(u(10,:))
+plot(u(ceil(size(u,1)/2),:))
+figure
+plot(v(ceil(size(v,2)/2),:))
