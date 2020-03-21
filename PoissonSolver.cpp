@@ -11,9 +11,22 @@
 #include <cblas.h>
 #include <mpi.h>
 
+// Setting up BLACS grid
+extern "C" {
+    // CBlacs Declarations
+    // Output parameters have a * while input parameters do not
+    void Cblacs_pinfo(int*, int*);
+    void Cblacs_get(int, int, int*);
+    void Cblacs_gridinit(int*, const char*, int, int);
+    void Cblacs_gridinfo(int, int*, int*, int*, int*);
+    void Cblacs_barrier(int, const char*);
+    void Cblacs_gridexit(int);
+    void Cblacs_exit(int);
+}
+
 using namespace std;
 
-// Defining LAPACK routine for solving banded linear system
+// Defining LAPACK routine for solving parallel banded linear system
 #define F77NAME(x) x##_
 extern "C" {
     void F77NAME(pdgbsv) (const int& N, const int& BWL, const int& BWU, const int& NRHS, double * A,
@@ -31,7 +44,11 @@ PoissonSolver::~PoissonSolver()
 {
     delete[] A;
     delete[] b;
-    delete piv;
+
+    delete[] A_loc;
+    delete[] x;
+    delete[] ipiv;
+    delete[] work;
 }
 
 // Function to solve the Poisson problem
@@ -50,8 +67,97 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
     //     myfile4.close();
     // }
 
+    // Declear MPI variables
+    int mpirank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);
+    bool mpiroot = (mpirank == 0);
+
+    // Populate global A matrix (column major format)
+    //----------------------------------------------------------------------------------------------------------------
+    n = (Nx-2)*(Ny-2);             // Number of columns of global A matrix
+    kl = Nx - 2;                   // Lower diagonal bandwidth  (Determined solely by number of columns)
+    ku = kl;                       // Upper diagonal bandwidth (Ku = Kl always here)
+    ldab = 1 + 2*kl + 2*ku;        // Number of rows in banded global matrix
+
+    A = new double[ldab*n];        // Initialise banded array/matrix
+
+    // Populate Global A matrix
+    for (int i=0; i<ldab*n; i++) {
+        if ((i - 3*ku)%ldab == 0) {
+            A[i] = 2/(dx*dx) + 2/(dy*dy);
+        }
+        else if ( ((i-2*ku)%ldab==0 && i > ku*ldab+1) || ((i+1)%ldab==0 && i < (n-ku)*ldab) ) {
+            A[i] = -1/(dx*dx);
+        }
+        else if ( (i<ldab*n-ku && (i-3*ku-1)%ldab == 0 && (i+ku)%(ldab*ku)!=0) ||
+                (i>3*ku-1 && (i-3*ku+1)%ldab==0 && (i-3*ku+1)%(ldab*ku)!=0) ) {
+            A[i] = -1/(dy*dy);
+        }
+        else {
+            A[i] = 0;
+        }
+    }
+
+    // A Matrix Visualisation (displayed in column major format)
+    if (mpiroot) {
+        ofstream myfile6;
+        myfile6.open("A_matrix.txt");
+        for (int i=0; i<n; i++){
+            for (int j=0; j<ldab; j++) {
+                if (A[i*ldab + j] != 0) {
+                    myfile6 << A[i*ldab + j] << " ";
+                } 
+                else {
+                    myfile6 << A[i*ldab + j] << "   ";
+                }
+            }
+            myfile6 << endl;
+        }
+        myfile6.close();
+    }
+    //----------------------------------------------------------------------------------------------------------------
+
+    // Populate global b vector from passed in vorticity matrix argument
+    // Convert the vorticity matrix into a long vector (exclude vorticities in the boundaries)
+    // Incremement index by column, then by row
+    double* vorticity_vec[n];
+    ofstream myfile5;
+    myfile5.open("b_vector.txt");
+    for (int i=1; i<Ny-1; i++) {
+        for (int j=1; j<Nx-1; j++) {
+            vorticity_vec[(Ny*(i-1))+(j-1)] = (omega_new +i*Nx +j);
+            b[(Ny-2)*(i-1)+(j-1)] = *vorticity_vec[(Ny*(i-1))+(j-1)];
+            myfile5 << b[(Ny-2)*(i-1)+(j-1)] << endl;
+        }
+    }
+    myfile5.close();
+
+    // Initialise CBLACS
+    //----------------------------------------------------------------------------------------------------------------
+
+    // Initialise CBLACS for Parallel Linear Algebra
+    int mype, npe, ctx, nrow, ncol, myrow, mycol;
+    char order; 
+
+    // Initialises the BLACS world communicator (calls MPI_Init if needed)
+    // npe: total number of processes
+    // mype: process rank (starting from 0)
+    Cblacs_pinfo(&mype, &npe);
+
+    // Get the default system context (i.e. MPI_COMM_WORLD)
+    Cblacs_get( 0, 0, &ctx );
+
+    // Initialise a process grid of 1 rows and npe columns
+    Cblacs_gridinit( &ctx, &order, 1, npe );
+
+    // Get info about the grid to verify it is set up
+    // myrow and mycol are indexed from 0
+    Cblacs_gridinfo( ctx, &nrow, &ncol, &myrow, &mycol);
+
+    //----------------------------------------------------------------------------------------------------------------
+
     // Parallel Banded Matrix Solver
-    //---------------------------------------------------------------------------------------------------------
+    //----------------------------------------------------------------------------------------------------------------
     int info;                                   // Status value
     const int N    = (Nx-2)*(Ny-2);             // Total problem size
     const int NB   = 4;                         // Blocking size (number of columns per process)
@@ -63,10 +169,10 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
     const int LA   = (1 + 2*BWL + 2*BWU)*NB;    // ScaLAPACK documentation
     const int LW   = (NB+BWU)*(BWL+BWU)+6*(BWL+BWU)*(BWL+2*BWU) + max(NRHS*(NB+2*BWL+4*BWU), 1); 
   
-    double* A    = new double[LA];   // Matrix banded storage
-    int*    ipiv = new int   [NB];   // Pivoting array
-    double* x    = new double[NB];   // In: RHS vector, Out: Solution
-    double* work = new double[LW];   // Workspace
+    A_loc = new double[LA];   // Matrix banded storage
+    ipiv  = new int   [NB];   // Pivoting array
+    x     = new double[NB];   // In: RHS vector, Out: Solution
+    work  = new double[LW];   // Workspace
 
     int desca[7];             // Descriptor for banded matrix
     desca[0] = 501;           // Type
@@ -86,7 +192,9 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
     descb[5] = NB;            // Local leading dim
     descb[6] = 0;             // Reserved
 
-    // Populate banded A and x here 
+    // Populate local A matrix
+
+    // Populate local x vector
     
     // ... Set up CBLACS grid
 
@@ -105,74 +213,8 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
     // pass
 
     //---------------------------------------------------------------------------------------------------------
-
-    // Banded matrix solver
-
+    
     //----------------------------------------------------------------------------------------------------------------
-    // Parameters to be passed
-    int n = (Nx - 2) * (Ny - 2);       // Problem size
-    int kl = Nx - 2;                   // Lower diagonal bandwidth  (Determined solely by number of columns)
-    int ku = kl;                       // Upper diagonal bandwidth (Ku = Kl always here)
-    int nrhs = 1;                      // Number of RHS vectors (always 1 here)
-    int ldab = 1 + 2*kl + ku;          // Number of rows in compressed matrix
-    int ldb = n;                       // Size of RHS vector
-    int info;                          // Additional possible info
-    A = new double[ldab*n];            // Initialise banded array/matrix
-    piv = new int[n];                  // Pivot data
-    b = new double[n];                 // Output vector (vorticities)
-
-    //----------------------------------------------------------------------------------------------------------------
-    // Populate banded A matrix (column major format)
-    for (int i=0; i<ldab*n; i++) {
-        if ((i - 2*ku)%ldab == 0) {
-            A[i] = 2/(dx*dx) + 2/(dy*dy);
-        }
-        else if ( ((i-ku)%ldab==0 && i > ku*ldab+1) || ((i+1)%ldab==0 && i < (n-ku)*ldab) ) {
-            A[i] = -1/(dx*dx);
-        }
-        else if ( (i<ldab*n-ku && (i-2*ku-1)%ldab == 0 && (i+ku)%(ldab*ku)!=0) ||
-                  (i>2*ku-1 && (i-2*ku+1)%ldab ==0 && (i-2*ku+1)%(ldab*ku)!=0) ) {
-            A[i] = -1/(dy*dy);
-        }
-        else {
-            A[i] = 0;
-        }
-    }
-
-    // A Matrix Visualisation (displayed in column major format)
-    // if (MPI_ROOT) {
-    //     ofstream myfile6;
-    //     myfile6.open("A_matrix.txt");
-    //     for (int i=0; i<n; i++){
-    //         for (int j=0; j<ldab; j++) {
-    //             if (A[i*ldab + j] != 0) {
-    //                 myfile6 << A[i*ldab + j] << " ";
-    //             } 
-    //             else {
-    //                 myfile6 << A[i*ldab + j] << "   ";
-    //             }
-    //         }
-    //         myfile6 << endl;
-    //     }
-    //     myfile6.close();
-    // }
-
-
-    //----------------------------------------------------------------------------------------------------------------
-    // Populate b vector from passed in vorticity matrix argument
-    // Convert the vorticity matrix into a long vector (exclude vorticities in the boundaries)
-    // Incremement index by column, then by row
-    double* vorticity_vec[n];
-    // ofstream myfile5;
-    // myfile5.open("b_vector.txt");
-    for (int i=1; i<Ny-1; i++) {
-        for (int j=1; j<Nx-1; j++) {
-            vorticity_vec[(Ny*(i-1))+(j-1)] = (omega_new +i*Nx +j);
-            b[(Ny-2)*(i-1)+(j-1)] = *vorticity_vec[(Ny*(i-1))+(j-1)];
-            // myfile5 << b[(Ny-2)*(i-1)+(j-1)] << endl;
-        }
-    }
-    // myfile5.close();
 
     // Visualise new internal streamfunction
     // if (MPI_ROOT) {

@@ -13,8 +13,16 @@ class PoissonSolver
         void ReturnStream(double * psi_new, int Nx, int Ny);
 
     private:
-        double* A;
-        double* b;
-        int n;
-        int* piv;
+        int n;      // Columns in banded A matrix (global)
+        int kl;     // Low diagonal bandwidth (global)
+        int ku;     // Upper diagonal bandwidth (global)
+        int ldab;   // Rows in banded A matrix (global, SCALAPACK form)
+        double* A;  // Declare A matrix (global)
+        double* b;  // Declare b array (global)
+
+        double* A_loc; // Declare A matrix (local)
+        double* x;     // Declare x array (local)
+        int* ipiv;     // Pivoting array
+        double* work;  // Delcare workspace
+
 };

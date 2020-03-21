@@ -31,7 +31,7 @@ target_include_directories(lidDrivenCavity PRIVATE ${MPI_INCLUDE_PATH})
 
 # Link the corresponding libraries from the 'target' to the found library
 # target_link_libraries(myprog ${BLAS_LIBRARIES})
-target_link_libraries(lidDrivenCavity ${BLAS_LIBRARIES} scalapack-openmpi ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} ${MPI_LIBRARIES})
+target_link_libraries(lidDrivenCavity ${BLAS_LIBRARIES} scalapack ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} ${MPI_LIBRARIES})
 
 # Instructions for creating and running CMake files:
 #   1. Filename is "CMakeLists.txt"
@@ -48,10 +48,10 @@ target_link_libraries(lidDrivenCavity ${BLAS_LIBRARIES} scalapack-openmpi ${Boos
 # mkdir build; cd build; cmake ../; make; mpiexec -np 2 ./lidDrivenCavity --Lx 1.0 --Ly 1.0 --Nx 161 --Ny 161 --Px 2 --Py 2 --dt 0.0001 --T 10 --Re 100
 
 # Full command line recompile and execute (with MPI):
-# make clean; cd ..; rmdir build; mkdir build; cd build; cmake ../; make; mpiexec -np 2 ./lidDrivenCavity --Lx 1.0 --Ly 1.0 --Nx 161 --Ny 161 --Px 2 --Py 2 --dt 0.0001 --T 10 --Re 100
+# make clean; cd ..; rmdir build; mkdir build; cd build; cmake ../; make; mpiexec -np 2 ./lidDrivenCavity --Lx 1.0 --Ly 1.0 --Nx 161 --Ny 161 --Px 2 --Py 2 --dt 0.0005 --T 10 --Re 100
 
 # Full command line recompile and execute (without MPI):
-# make clean;cd ..;rmdir build;mkdir build;cd build;cmake ../;make;./lidDrivenCavity --Lx 1.0 --Ly 1.0 --Nx 161 --Ny 161 --Px 1 --Py 1 --dt 0.0001 --T 10 --Re 100
+# make clean;cd ..;rmdir build;mkdir build;cd build;cmake ../;make;./lidDrivenCavity --Lx 1.0 --Ly 1.0 --Nx 161 --Ny 161 --Px 1 --Py 1 --dt 0.0005 --T 10 --Re 100
 
 # Pass in these arguments when running
 # ./lidDrivenCavity --Lx 1.0 --Ly 1.0 --Nx 5 --Ny 5 --Px 4 --Py 4 --dt 0.05 --T 10 --Re 400
