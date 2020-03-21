@@ -13,22 +13,6 @@
 
 using namespace std;
 
-// Setting up BLACS grid
-extern "C" {
-    // CBlacs Declarations
-    // Output parameters have a * while input parameters do not
-    void Cblacs_pinfo(int*, int*);
-    void Cblacs_get(int, int, int*);
-    void Cblacs_gridinit(int*, const char*, int, int);
-    void Cblacs_gridinfo(int, int*, int*, int*, int*);
-    // void Cblacs_pcoord(int, int, int*, int*);
-    void Cblacs_gridexit(int);
-    // void Cblacs_barrier(int, const char*);
-    // void Cdgerv2d(int, int, int, double*, int, int, int);
-    // void Cdgesd2d(int, int, int, double*, int, int, int);
-    // int numroc_(int*, int*, int*, int*, int*);
-}
-
 // Defining LAPACK routine for solving banded linear system
 #define F77NAME(x) x##_
 extern "C" {
@@ -65,38 +49,6 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
     //     }
     //     myfile4.close();
     // }
-
-    // Initialise CBLACS
-    //---------------------------------------------------------------------------------------------------------
-
-    // Initialise CBLACS for Parallel Linear Algebra
-    int mype, npe, ctx, nrow, ncol, myrow, mycol;
-    char order; 
-    // Initialises the BLACS world communicator (calls MPI_Init if needed)
-    Cblacs_pinfo(&mype, &npe);
-    // Get the default system context (i.e. MPI_COMM_WORLD)
-    Cblacs_get( 0, 0, &ctx );
-    // Initialise a process grid of 1 rows and npe columns
-    Cblacs_gridinit( &ctx, &order, 1, npe );
-    // Get info about the grid to verify it is set up
-    Cblacs_gridinfo( ctx, &nrow, &ncol, &myrow, &mycol);
-
-    //---------------------------------------------------------------------------------------------------------
-
-    // Initialise MPI
-    //---------------------------------------------------------------------------------------------------------
-
-    // Get number of processes
-    int world_size;
-    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-
-    // Get rank of process
-    int mpirank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);
-
-    // True (1) if process is the root process 
-    bool mpiroot = (mpirank == 0);
-    //---------------------------------------------------------------------------------------------------------
 
     // Parallel Banded Matrix Solver
     //---------------------------------------------------------------------------------------------------------

@@ -31,7 +31,7 @@ target_include_directories(lidDrivenCavity PRIVATE ${MPI_INCLUDE_PATH})
 
 # Link the corresponding libraries from the 'target' to the found library
 # target_link_libraries(myprog ${BLAS_LIBRARIES})
-target_link_libraries(lidDrivenCavity ${BLAS_LIBRARIES} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} ${MPI_LIBRARIES})
+target_link_libraries(lidDrivenCavity ${BLAS_LIBRARIES} scalapack-openmpi ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} ${MPI_LIBRARIES})
 
 # Instructions for creating and running CMake files:
 #   1. Filename is "CMakeLists.txt"
