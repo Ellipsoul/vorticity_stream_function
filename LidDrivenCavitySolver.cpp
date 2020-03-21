@@ -8,21 +8,6 @@
 #include <cblas.h>
 #include <mpi.h>
 
-// Setting up BLACS
-extern "C" {
-    // CBlacs Declarations
-    void Cblacs_pinfo(int*, int*);
-    void Cblacs_get(int, int, int*);
-    void Cblacs_gridinit(int*, const char*, int, int);
-    void Cblacs_pcoord(int, int, int*, int*);
-    void Cblacs_gridexit(int);
-    void Cblacs_barrier(int, const char*);
-    void Cdgerv2d(int, int, int, double*, int, int, int);
-    void Cdgesd2d(int, int, int, double*, int, int, int);
- 
-    int numroc_(int*, int*, int*, int*, int*);
-}
-
 namespace po = boost::program_options;
 
 int main(int argc, char* argv[])
@@ -31,22 +16,22 @@ int main(int argc, char* argv[])
     // Initialise MPI
     //---------------------------------------------------------------------------------------------------------
 
-    // Initialise MPI environment
-    MPI_Init(&argc, &argv);
+    // // Initialise MPI environment
+    // MPI_Init(&argc, &argv);
 
-    // Get number of processes
-    int world_size;
-    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+    // // Get number of processes
+    // int world_size;
+    // MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
-    // Get rank of process
-    int mpirank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);
+    // // Get rank of process
+    // int mpirank;
+    // MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);
 
-    // True (1) if process is the root process 
-    bool mpiroot = (mpirank == 0);
+    // // True (1) if process is the root process 
+    // bool mpiroot = (mpirank == 0);
  
-    // Helping variables
-    int iZERO = 0;
+    // // Helping variables
+    // int iZERO = 0;
     //---------------------------------------------------------------------------------------------------------
 
     // Create a new instance of the LidDrivenCavity class
@@ -91,12 +76,9 @@ int main(int argc, char* argv[])
 
     // Verify and set command line inputs
     solver -> Verify(Lx_arg, Ly_arg, Nx_arg, Ny_arg, Px_arg, Py_arg, dt_arg, T_arg, Re_arg);
-    if (mpiroot) {
-        cout << "All command line input checks passed" << endl;
-    }
+    cout << "All command line input checks passed" << endl;
 
     solver -> Solve();
  
- 
-	MPI_Finalize();
+	// MPI_Finalize();
 }

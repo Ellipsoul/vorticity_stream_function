@@ -45,13 +45,13 @@ target_link_libraries(lidDrivenCavity ${BLAS_LIBRARIES} ${Boost_LIBRARIES} ${LAP
 #       ./lidDrivenCavity
 
 # Compile and execute command from project directory:
-# mkdir build; cd build; cmake ../; make; mpiexec -np 2 ./lidDrivenCavity --Lx 1.0 --Ly 1.0 --Nx 161 --Ny 161 --Px 2 --Py 2 --dt 0.0001 --T 10 --Re 100
+# mkdir build; cd build; cmake ../; make; mpiexec -np 2 ./lidDrivenCavity --Lx 1.0 --Ly 1.0 --Nx 161 --Ny 161 --Px 2 --Py 2 --dt 0.0001 --T 6 --Re 100
 
 # Full command line recompile and execute (with MPI):
 # make clean; cd ..; rmdir build; mkdir build; cd build; cmake ../; make; mpiexec -np 2 ./lidDrivenCavity --Lx 1.0 --Ly 1.0 --Nx 161 --Ny 161 --Px 2 --Py 2 --dt 0.0001 --T 10 --Re 100
 
 # Full command line recompile and execute (without MPI):
-# make clean;cd ..;rmdir build;mkdir build;cd build;cmake ../;make;./lidDrivenCavity --Lx 1.0 --Ly 1.0 --Nx 161 --Ny 161 --Px 1 --Py 1 --dt 0.0001 --T 10 --Re 100
+# make clean;cd ..;rmdir build;mkdir build;cd build;cmake ../;make;./lidDrivenCavity --Lx 1.0 --Ly 1.0 --Nx 161 --Ny 161 --Px 1 --Py 1 --dt 0.0002 --T 6 --Re 100
 
 # Pass in these arguments when running
 # ./lidDrivenCavity --Lx 1.0 --Ly 1.0 --Nx 5 --Ny 5 --Px 4 --Py 4 --dt 0.05 --T 10 --Re 400
