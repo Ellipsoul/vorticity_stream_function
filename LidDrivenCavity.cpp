@@ -201,6 +201,9 @@ void LidDrivenCavity::Solve()
     double U = 1.0;
     int t_steps = ceil(T/dt);
 
+    // Create new instance of the Poisson Solver
+    PoissonSolver* poisson = new PoissonSolver();
+
     // Looping through every time increment
     for (int i=1; i<t_steps; i++) {  // Change the max to t_steps when ready
         
@@ -270,9 +273,6 @@ void LidDrivenCavity::Solve()
 
         // Solve the Poisson problem to calculate stream-function at time t + dt
         //---------------------------------------------------------------------------------------------------------        
-        
-        // Create new instance of the Poisson Solver
-        PoissonSolver* poisson = new PoissonSolver();
 
         // Solve the poisson problem
         poisson -> SolvePoisson((double*)omega_new, Ny, Nx, dx, dy);
@@ -280,9 +280,6 @@ void LidDrivenCavity::Solve()
         // Retrieve values for the new streamfunction
         psi_new = new double[(Nx-2)*(Ny-2)];
         poisson -> ReturnStream(psi_new, Nx, Ny);
-
-        // Run destructor for instance
-        poisson -> ~PoissonSolver();
 
         //---------------------------------------------------------------------------------------------------------
 
@@ -312,6 +309,8 @@ void LidDrivenCavity::Solve()
         //---------------------------------------------------------------------------------------------------------    
 
     }
+    // Run destructor for instance
+    poisson -> ~PoissonSolver();
 
     // Final streamfunction matrix found, solving for velocities
     
