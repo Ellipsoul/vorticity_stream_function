@@ -160,7 +160,7 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
     //----------------------------------------------------------------------------------------------------------------
     int info;                                   // Status value
     const int N    = (Nx-2)*(Ny-2);             // Total problem size
-    const int NB   = ceil(N/npe);               // Blocking size (number of columns per process)
+    const int NB   = ceil(1.0*N/npe);           // Blocking size (number of columns per process)
     const int BWL  = Nx-2;                      // Lower bandwidth
     const int BWU  = Nx-2;                      // Upper bandwidth
     const int NRHS = 1;                         // Number of RHS to solve
@@ -168,7 +168,7 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
     const int IB   = 1;                         // Start offset in RHS vector (to use just a subvector)
     const int LA   = (1 + 2*BWL + 2*BWU)*NB;    // ScaLAPACK documentation
     const int LW   = (NB+BWU)*(BWL+BWU)+6*(BWL+BWU)*(BWL+2*BWU) + max(NRHS*(NB+2*BWL+4*BWU), 1); 
-  
+
     A_loc = new double[LA];   // Matrix banded storage
     ipiv  = new int   [NB];   // Pivoting array
     x     = new double[NB];   // In: RHS vector, Out: Solution
@@ -192,6 +192,8 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
     descb[5] = NB;            // Local leading dim
     descb[6] = 0;             // Reserved
 
+    // Local A matrix
+    //----------------------------------------------------------------------------------------------------------------
     // Populate local A matrix
     for (int i=0; i<LA; i++) {
         if ((mype+1) != npe && N%NB != 0) {  // All processes except last (if padding required)
@@ -207,6 +209,7 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
         }
     }
 
+    // Local A matrix visualisation
     if (mpiroot) {
         ofstream A_locfile;
         A_locfile.open("Local_A.txt");
@@ -216,9 +219,12 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
             }
             A_locfile << endl;
         }
+        A_locfile.close();
     }
+    //----------------------------------------------------------------------------------------------------------------
 
-
+    // Local x vector
+    //----------------------------------------------------------------------------------------------------------------
     // Populate local x vector
     for (int i=0; i<NB; i++) {
         if ((mype+1) != npe && N%NB != 0) {  // All processes except last (if padding required)
@@ -233,6 +239,17 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
             }
         }
     }
+
+    // Local x vector visualisation
+    if (mpiroot) {
+        ofstream x_locfile;
+        x_locfile.open("Local_x.txt");
+        for (int i=0; i<NB; i++) {
+            x_locfile << x[i] << endl;
+        }
+        x_locfile.close();
+    }
+    //----------------------------------------------------------------------------------------------------------------
 
     // ... Set up CBLACS grid (?)
 
