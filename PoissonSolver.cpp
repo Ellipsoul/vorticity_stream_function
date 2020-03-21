@@ -37,6 +37,31 @@ extern "C" {
 // Constructor
 PoissonSolver::PoissonSolver()
 {
+    // Declare MPI variables
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);
+    mpiroot = (mpirank == 0);
+
+    if (mpiroot) {
+        cout << "Poisson Solver instance created" << endl;
+    }
+
+    // Initialise CBLACS
+    //----------------------------------------------------------------------------------------------------------------
+    // Initialises the BLACS world communicator (calls MPI_Init if needed)
+    // npe: total number of processes
+    // mype: process rank (starting from 0)
+    Cblacs_pinfo(&mype, &npe);
+
+    // Get the default system context (i.e. MPI_COMM_WORLD)
+    Cblacs_get( 0, 0, &ctx );
+
+    // Initialise a process grid of 1 rows and npe columns
+    Cblacs_gridinit( &ctx, &order, 1, npe );
+
+    // Get info about the grid to verify it is set up
+    // myrow and mycol are indexed from 0
+    Cblacs_gridinfo( ctx, &nrow, &ncol, &myrow, &mycol);
+    //----------------------------------------------------------------------------------------------------------------
 }
 
 // Destructor
@@ -54,8 +79,8 @@ PoissonSolver::~PoissonSolver()
 // Function to solve the Poisson problem
 void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, double dy) {
     
-    // Visualise passed vorticity matrix into a file
-    // if (MPI_ROOT) {
+    // Visualise passed vorticity matrix
+    // if (mpiroot) {
     //     ofstream myfile4;
     //     myfile4.open("vorticity_matrix_old_trans.txt");
     //     for (int i=0; i<Ny; i++) {
@@ -67,11 +92,6 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
     //     myfile4.close();
     // }
 
-    // Declear MPI variables
-    int mpirank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);
-    bool mpiroot = (mpirank == 0);
-
     // Populate global A matrix (column major format)
     //----------------------------------------------------------------------------------------------------------------
     n = (Nx-2)*(Ny-2);             // Number of columns of global A matrix
@@ -81,7 +101,7 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
 
     A = new double[ldab*n];        // Initialise banded array/matrix
 
-    // Populate Global A matrix
+    // Populate Global A matrix (currently in column major format)
     for (int i=0; i<ldab*n; i++) {
         if ((i - 3*ku)%ldab == 0) {
             A[i] = 2/(dx*dx) + 2/(dy*dy);
@@ -118,9 +138,13 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
     //----------------------------------------------------------------------------------------------------------------
 
     // Populate global b vector from passed in vorticity matrix argument
+    //----------------------------------------------------------------------------------------------------------------
+
     // Convert the vorticity matrix into a long vector (exclude vorticities in the boundaries)
     // Incremement index by column, then by row
     double* vorticity_vec[n];
+    b = new double[n];
+
     ofstream myfile5;
     myfile5.open("b_vector.txt");
     for (int i=1; i<Ny-1; i++) {
@@ -132,35 +156,11 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
     }
     myfile5.close();
 
-    // Initialise CBLACS
-    //----------------------------------------------------------------------------------------------------------------
-
-    // Initialise CBLACS for Parallel Linear Algebra
-    int mype, npe, ctx, nrow, ncol, myrow, mycol;
-    char order; 
-
-    // Initialises the BLACS world communicator (calls MPI_Init if needed)
-    // npe: total number of processes
-    // mype: process rank (starting from 0)
-    Cblacs_pinfo(&mype, &npe);
-
-    // Get the default system context (i.e. MPI_COMM_WORLD)
-    Cblacs_get( 0, 0, &ctx );
-
-    // Initialise a process grid of 1 rows and npe columns
-    Cblacs_gridinit( &ctx, &order, 1, npe );
-
-    // Get info about the grid to verify it is set up
-    // myrow and mycol are indexed from 0
-    Cblacs_gridinfo( ctx, &nrow, &ncol, &myrow, &mycol);
-
-    //----------------------------------------------------------------------------------------------------------------
-
     // Parallel Banded Matrix Solver
     //----------------------------------------------------------------------------------------------------------------
     int info;                                   // Status value
     const int N    = (Nx-2)*(Ny-2);             // Total problem size
-    const int NB   = 4;                         // Blocking size (number of columns per process)
+    const int NB   = ceil(N/npe);               // Blocking size (number of columns per process)
     const int BWL  = Nx-2;                      // Lower bandwidth
     const int BWU  = Nx-2;                      // Upper bandwidth
     const int NRHS = 1;                         // Number of RHS to solve
@@ -193,10 +193,48 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
     descb[6] = 0;             // Reserved
 
     // Populate local A matrix
+    for (int i=0; i<LA; i++) {
+        if ((mype+1) != npe && N%NB != 0) {  // All processes except last (if padding required)
+            A_loc[i] = A[i + mype*(1 + 2*BWL + 2*BWU)*NB];
+        }
+        else {
+            if (i < N*(1 + 2*BWL + 2*BWU)) {
+                A_loc[i] = A[i + mype*(1 + 2*BWL + 2*BWU)*NB];
+            }
+            else {
+                A_loc[i] = 0;
+            }
+        }
+    }
+
+    if (mpiroot) {
+        ofstream A_locfile;
+        A_locfile.open("Local_A.txt");
+        for (int i=0; i<(1+2*BWL+2*BWU); i++) {
+            for (int j=0; j<NB; j++) {
+                A_locfile  << A_loc[(1+2*BWL+2*BWU)*i + j] << " ";
+            }
+            A_locfile << endl;
+        }
+    }
+
 
     // Populate local x vector
-    
-    // ... Set up CBLACS grid
+    for (int i=0; i<NB; i++) {
+        if ((mype+1) != npe && N%NB != 0) {  // All processes except last (if padding required)
+            x[i] = b[i + mype*(NB)];
+        }
+        else {
+            if (i < N) {
+                x[i] = b[i + mype*(NB)];
+            }
+            else {
+                x[i] = 0;
+            }
+        }
+    }
+
+    // ... Set up CBLACS grid (?)
 
     // Perform the parallel solve.
     F77NAME(pdgbsv) (N, BWL, BWU, NRHS, A, JA, desca, ipiv, &x[0], IB, descb, work, LW, info);
@@ -210,14 +248,12 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
     // Finalize CBLACS and clean up memory
     //---------------------------------------------------------------------------------------------------------
 
-    // pass
+    //Cblacs_gridexit( mContext );
 
     //---------------------------------------------------------------------------------------------------------
     
-    //----------------------------------------------------------------------------------------------------------------
-
     // Visualise new internal streamfunction
-    // if (MPI_ROOT) {
+    // if (mpiroot) {
     //     ofstream myfile7;
     //     myfile7.open("stream_vector_new.txt");
     //     for (int i=0; i<(Ny-2)*(Nx-2); i++) {
@@ -229,5 +265,5 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
 }
 
 void PoissonSolver::ReturnStream(double * psi_new, int Nx, int Ny) {
-    cblas_dcopy((Nx-2)*(Ny-2), b, 1, psi_new, 1);
+    cblas_dcopy((Nx-2)*(Ny-2), x, 1, psi_new, 1);
 }

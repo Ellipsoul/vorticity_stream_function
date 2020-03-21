@@ -17,9 +17,16 @@
 
 using namespace std;
 
-// Constructor (will be left empty)
+// Constructor
 LidDrivenCavity::LidDrivenCavity()
 {
+    // Declare MPI variables
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);
+    mpiroot = (mpirank == 0);
+
+    if (mpiroot) {
+        cout << "LidDrivenCavity instance created" << endl;
+    }
 }
 
 // Destructor (will be left empty)
@@ -205,7 +212,7 @@ void LidDrivenCavity::Solve()
     PoissonSolver* poisson = new PoissonSolver();
 
     // Looping through every time increment
-    for (int i=1; i<2; i++) {  // Change the max to t_steps when ready
+    for (int i=1; i<3; i++) {  // Change the max to t_steps when ready
         
         // Calculating vorticity boundary conditions at time t
         //---------------------------------------------------------------------------------------------------------
@@ -361,7 +368,9 @@ void LidDrivenCavity::Solve()
 
     // Stop timer and calculate code runtime
     auto stop = chrono::high_resolution_clock::now();
-    auto duration = chrono::duration_cast<chrono::milliseconds>(stop - start);
-    cout << "Elapsed execution duration: " << duration.count() << " milliseconds" << endl;
+    if (mpiroot) {
+        auto duration = chrono::duration_cast<chrono::milliseconds>(stop - start);
+        cout << "Elapsed execution duration: " << duration.count() << " milliseconds" << endl;
+    }
 
 }

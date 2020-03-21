@@ -28,6 +28,9 @@ private:
     double* v = nullptr;
     double* s = nullptr;
 
+    int mpirank;
+    bool mpiroot;
+
     double dt;
     double T;
     int    Nx;
