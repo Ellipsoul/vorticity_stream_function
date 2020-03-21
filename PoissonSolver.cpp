@@ -74,6 +74,9 @@ PoissonSolver::~PoissonSolver()
     delete[] x;
     delete[] ipiv;
     delete[] work;
+
+    Cblacs_gridexit(ctx);
+    Cblacs_exit(0);
 }
 
 // Function to solve the Poisson problem
@@ -213,8 +216,8 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
     if (mpiroot) {
         ofstream A_locfile;
         A_locfile.open("Local_A.txt");
-        for (int i=0; i<(1+2*BWL+2*BWU); i++) {
-            for (int j=0; j<NB; j++) {
+        for (int i=0; i<NB; i++) {
+            for (int j=0; j<(1+2*BWL+2*BWU); j++) {
                 A_locfile  << A_loc[(1+2*BWL+2*BWU)*i + j] << " ";
             }
             A_locfile << endl;
@@ -255,7 +258,6 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
 
     // Perform the parallel solve.
     F77NAME(pdgbsv) (N, BWL, BWU, NRHS, A, JA, desca, ipiv, &x[0], IB, descb, work, LW, info);
-
     // Verify it completed successfully.
     if (info) {
     cout << "Error occurred in PDGBTRS: " << info << endl;

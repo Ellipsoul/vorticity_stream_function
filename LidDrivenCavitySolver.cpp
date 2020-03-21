@@ -78,6 +78,6 @@ int main(int argc, char* argv[])
     solver -> Solve();
 
     // Finalise MPI
-    MPI_Finalize();
+    // MPI_Finalize();
  
 }
