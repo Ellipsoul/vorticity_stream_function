@@ -21,6 +21,13 @@ using namespace std;
 LidDrivenCavity::LidDrivenCavity()
 {
     // Declare MPI variables
+
+    // Get number of processes
+    int world_size;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+    np = world_size;
+
+    // Get rank of process
     MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);
     mpiroot = (mpirank == 0);
 
@@ -106,7 +113,7 @@ void LidDrivenCavity::SetTimeStep(double deltat, double Lx, double Ly, unsigned 
 // Setting number of partitions
 void LidDrivenCavity::SetPartitions(double px, double py, int nx, int ny)
 {
-    // Catch and return erros if either value is not a positive integer, or fails to properly divide domain
+    // Catch and return errors if either value is not a positive integer, or fails to properly divide domain
     if (px - int(px) != 0 || px <= 0 || (nx - 1)/px != int((nx - 1)/px)) {
         throw domain_error("Px must be a positive integer and appropriately divide the domain. Program terminated");
     }
@@ -119,6 +126,14 @@ void LidDrivenCavity::SetPartitions(double px, double py, int nx, int ny)
     Py = int(py);
 }
 
+// Verify number of processors
+void LidDrivenCavity::VerifyProcessors() {
+    // Catch and return error if there are too many processors for the current domain size
+    if (np > (Nx-2)*(Ny-2)/(2*Nx-3)) {
+        throw domain_error("Too many processors entered for an efficient parallel solution. Program terminated");
+    }
+}
+
 // Perform argument checks and assign into variable if passed
 void LidDrivenCavity::Verify(const double Lx_arg, const double Ly_arg, const double Nx_arg, const double Ny_arg,
                                 const double Px_arg, const double Py_arg, const double dt_arg, const double T_arg, 
@@ -129,7 +144,9 @@ void LidDrivenCavity::Verify(const double Lx_arg, const double Ly_arg, const dou
         SetDomainSize(Lx_arg, Ly_arg);
     }
     catch (domain_error& e) {
-        cout << "Error: " << e.what() << endl;
+        if (mpiroot) {
+            cout << "Error: " << e.what() << endl;
+        }
         exit(EXIT_FAILURE);
     }
 
@@ -138,7 +155,9 @@ void LidDrivenCavity::Verify(const double Lx_arg, const double Ly_arg, const dou
         SetGridSize(Nx_arg, Ny_arg);
     }
     catch (domain_error& e) {
-        cout << "Error: " << e.what() << endl;
+        if (mpiroot) {
+            cout << "Error: " << e.what() << endl;
+        }
         exit(EXIT_FAILURE);
     }
 
@@ -147,7 +166,9 @@ void LidDrivenCavity::Verify(const double Lx_arg, const double Ly_arg, const dou
         SetTimeStep(dt_arg, Lx_arg, Ly_arg, Nx_arg, Ny_arg, Re_arg);
     }
     catch (domain_error& e) {
-        cout << "Error: " << e.what() << endl;
+        if (mpiroot) {
+            cout << "Error: " << e.what() << endl;
+        }
         exit(EXIT_FAILURE);
     }
 
@@ -156,7 +177,9 @@ void LidDrivenCavity::Verify(const double Lx_arg, const double Ly_arg, const dou
         SetFinalTime(T_arg);
     }
     catch (domain_error& e) {
-        cout << "Error: " << e.what() << endl;
+        if (mpiroot) {
+            cout << "Error: " << e.what() << endl;
+        }
         exit(EXIT_FAILURE);
     }
 
@@ -165,7 +188,9 @@ void LidDrivenCavity::Verify(const double Lx_arg, const double Ly_arg, const dou
         SetReynoldsNumber(Re_arg);
     }
     catch (domain_error& e) {
+        if (mpiroot) {
         cout << "Error: " << e.what() << endl;
+        }
         exit(EXIT_FAILURE);
     }
 
@@ -174,7 +199,20 @@ void LidDrivenCavity::Verify(const double Lx_arg, const double Ly_arg, const dou
         SetPartitions(Px_arg, Py_arg, Nx_arg, Ny_arg);
     }
     catch (domain_error& e) {
-        cout << "Error: " << e.what() << endl;
+        if (mpiroot) {
+            cout << "Error: " << e.what() << endl;
+        }
+        exit(EXIT_FAILURE);
+    }
+
+    // Verify processors
+    try {
+        VerifyProcessors();
+    }
+    catch (domain_error& e) {
+        if (mpiroot) {
+            cout << "Error: " << e.what() << endl;
+        }
         exit(EXIT_FAILURE);
     }
 }
@@ -280,19 +318,16 @@ void LidDrivenCavity::Solve()
 
         // Solve the Poisson problem to calculate stream-function at time t + dt
         //---------------------------------------------------------------------------------------------------------        
-
         // Solve the poisson problem
         poisson -> SolvePoisson((double*)omega_new, Ny, Nx, dx, dy);
 
         // Retrieve values for the new streamfunction
         psi_new = new double[(Nx-2)*(Ny-2)];
         poisson -> ReturnStream(psi_new, Nx, Ny);
-
         //---------------------------------------------------------------------------------------------------------
 
         // Update the the stream-function into the original psi matrix
         //--------------------------------------------------------------------------------------------------------- 
-
         for (int i=1; i<Ny-1; i++) {
             for (int j=1; j<Nx-1; j++) {
                 psi[i][j] = psi_new[(Ny-2)*(i-1) + (j-1)];
@@ -312,7 +347,6 @@ void LidDrivenCavity::Solve()
         //     }
         //     myfile8.close();
         // }
-
         //---------------------------------------------------------------------------------------------------------    
 
     }

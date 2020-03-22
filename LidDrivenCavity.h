@@ -15,6 +15,7 @@ public:
     void SetReynoldsNumber(double Re);
     void SetTimeStep(double deltat, double Lx, double Ly, unsigned int Nx, unsigned int Ny, double Re);
     void SetPartitions(double px, double py, int nx, int ny);
+    void VerifyProcessors();
 
     void Verify(const double Lx_arg, const double Ly_arg, const double Nx_arg, const double Ny_arg,
                     const double Px_arg, const double Py_arg, const double dt_arg, const double T_arg, 
@@ -30,6 +31,7 @@ private:
 
     int mpirank;
     bool mpiroot;
+    int np;
 
     double dt;
     double T;

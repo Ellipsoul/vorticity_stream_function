@@ -284,5 +284,9 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
 }
 
 void PoissonSolver::ReturnStream(double * psi_new, int Nx, int Ny) {
-    cblas_dcopy((Nx-2)*(Ny-2), x, 1, psi_new, 1);
+    // Assemble a global vorticity vector
+    cout << x[0] << endl;
+
+    // Copy global voriticity vector back to LidDrivenCavity
+    cblas_dcopy((Nx-2)*(Ny-2), b, 1, psi_new, 1);
 }
