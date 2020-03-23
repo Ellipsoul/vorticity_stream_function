@@ -250,7 +250,7 @@ void LidDrivenCavity::Solve()
     PoissonSolver* poisson = new PoissonSolver();
 
     // Looping through every time increment
-    for (int i=1; i<10; i++) {  // Change the max to t_steps when ready
+    for (int i=1; i<2; i++) {  // Change the max to t_steps when ready
         
         // Calculating vorticity boundary conditions at time t
         //---------------------------------------------------------------------------------------------------------
@@ -333,73 +333,72 @@ void LidDrivenCavity::Solve()
                 psi[i][j] = psi_new[(Ny-2)*(i-1) + (j-1)];
             }
         }
-
+        cout << mpirank << " made back to liddrivencavity" << endl;
         // Updated stream-function matrix visualisation
-        // if (MPI_ROOT) {
-        //     ofstream myfile8;
-        //     myfile8.open("stream_matrix_new.txt");
-            
-        //     for (int i=0; i<Nx; i++) {
-        //         for (int j=0; j<Ny; j++) {
-        //             myfile8 << psi[i][j] << " ";
-        //         }
-        //         myfile8 << endl;
-        //     }
-        //     myfile8.close();
-        // }
+        if (mpiroot) {
+            ofstream myfile8;
+            myfile8.open("stream_matrix_new.txt");
+            for (int i=0; i<Nx; i++) {
+                for (int j=0; j<Ny; j++) {
+                    myfile8 << psi[i][j] << " ";
+                }
+                myfile8 << endl;
+            }
+            myfile8.close();
+        }
         //---------------------------------------------------------------------------------------------------------    
 
     }
-
-    // Run destructor for instance
-    poisson -> ~PoissonSolver();
+    cout << mpirank << " made it outside the loop" << endl;
 
     // Final streamfunction matrix found, solving for velocities
     //-------------------------------------------------------------------------------------------------------------
-    double u[Ny-1][Nx];
-    double v[Nx][Ny-1];
+    if (mpiroot) {
+        double u[Ny-1][Nx];
+        double v[Nx][Ny-1];
 
-    // u velocity (+ visualisation)
-    ofstream u_file;
-    u_file.open("u_velocity.txt");
-    for (int i=0; i<Ny-1; i++) {
-        for (int j=0; j<Nx; j++) {
-            u[i][j] = (psi[i][j] - psi[i+1][j])/dy;
-            u_file << u[i][j] << " ";
+        // u velocity (+ visualisation)
+        ofstream u_file;
+        u_file.open("u_velocity.txt");
+        for (int i=0; i<Ny-1; i++) {
+            for (int j=0; j<Nx; j++) {
+                u[i][j] = (psi[i][j] - psi[i+1][j])/dy;
+                u_file << u[i][j] << " ";
+            }
+            u_file << endl;
         }
-        u_file << endl;
-    }
-    u_file.close();
+        u_file.close();
 
-    // v velocity (+ visualisation)
-    ofstream v_file;
-    v_file.open("v_velocity.txt");
-    for (int i=0; i<Ny; i++) {
-        for (int j=0; j<Nx-1; j++) {
-            v[i][j] = (psi[i][j+1] - psi[i][j])/dx;
-            v_file << v[i][j] << " ";
+        // v velocity (+ visualisation)
+        ofstream v_file;
+        v_file.open("v_velocity.txt");
+        for (int i=0; i<Ny; i++) {
+            for (int j=0; j<Nx-1; j++) {
+                v[i][j] = (psi[i][j+1] - psi[i][j])/dx;
+                v_file << v[i][j] << " ";
+            }
+            v_file << endl;
         }
-        v_file << endl;
-    }
-    v_file.close();
+        v_file.close();
 
-    // Final streamfunction and vorticity matrices
-    ofstream psi_file;
-    ofstream omega_file;
-    psi_file.open("psi_final.txt");
-    omega_file.open("omega_final.txt");
-    for (int i=0; i<Nx; i++) {
-        for (int j=0; j<Ny; j++) {
-            psi_file << psi[i][j] << " ";
-            omega_file << omega[i][j] << " ";
+        // Final streamfunction and vorticity matrices
+        ofstream psi_file;
+        ofstream omega_file;
+        psi_file.open("psi_final.txt");
+        omega_file.open("omega_final.txt");
+        for (int i=0; i<Nx; i++) {
+            for (int j=0; j<Ny; j++) {
+                psi_file << psi[i][j] << " ";
+                omega_file << omega[i][j] << " ";
+            }
+            psi_file << endl;
+            omega_file << endl;
         }
-        psi_file << endl;
-        omega_file << endl;
+        psi_file.close();
+        omega_file.close();
     }
-    psi_file.close();
-    omega_file.close();
+
     //-------------------------------------------------------------------------------------------------------------
-
     // Stop timer and calculate code runtime
     auto stop = chrono::high_resolution_clock::now();
     if (mpiroot) {
@@ -407,4 +406,6 @@ void LidDrivenCavity::Solve()
         cout << "Elapsed execution duration: " << duration.count() << " milliseconds" << endl;
     }
 
+    // Run destructor for instance
+    poisson -> ~PoissonSolver();
 }

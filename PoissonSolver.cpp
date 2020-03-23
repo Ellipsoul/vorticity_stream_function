@@ -244,14 +244,14 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
     }
 
     // Local x vector visualisation
-    // if (mpiroot) {
-    //     ofstream x_locfile;
-    //     x_locfile.open("Local_x.txt");
-    //     for (int i=0; i<NB; i++) {
-    //         x_locfile << x[i] << endl;
-    //     }
-    //     x_locfile.close();
-    // }
+    if (!mpiroot) {
+        ofstream x_locfile;
+        x_locfile.open("Local_x.txt");
+        for (int i=0; i<NB; i++) {
+            x_locfile << x[i] << endl;
+        }
+        x_locfile.close();
+    }
     //----------------------------------------------------------------------------------------------------------------
     // Perform the parallel solve.
     F77NAME(pdgbsv) (N, BWL, BWU, NRHS, A, JA, desca, ipiv, &x[0], IB, descb, work, LW, info);
@@ -259,6 +259,7 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
     if (info) {
     cout << "Error occurred in PDGBTRS: " << info << endl;
     }
+    cout << "Performed pdgbsv" << endl;
     //---------------------------------------------------------------------------------------------------------
     
     // Visualise new internal streamfunction
@@ -275,8 +276,37 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
 
 void PoissonSolver::ReturnStream(double * psi_new, int Nx, int Ny) {
     // Assemble a global vorticity vector
-    cout << x[0] << endl;
+    
+    if (mpiroot) {
+        for (int i=0; i<ceil(1.0*(Nx-2)*(Ny-2)/npe); i++) {
+            cout << "Processor " << mype << "        " << i << x[i] << endl;
+        }
+    }
+    if (!mpiroot) {
+        for (int i=0; i<ceil(1.0*(Nx-2)*(Ny-2)/npe); i++) {
+            cout << "Processor " << mype << "        " << i << x[i] << endl;
+        }
+    }
+    
+    MPI_Datatype vec_type_in;
+    MPI_Datatype vec_type_out;
+    
+    MPI_Type_vector(ceil(1.0*n/npe), 1, 1, MPI_DOUBLE, &vec_type_in);
+    MPI_Type_vector(n, 1, 1, MPI_DOUBLE, &vec_type_out);
 
-    // Copy global voriticity vector back to LidDrivenCavity
-    cblas_dcopy((Nx-2)*(Ny-2), x, 1, psi_new, 1);
+    MPI_Type_commit(&vec_type_in);
+    MPI_Type_commit(&vec_type_out);
+    
+    // MPI_Gather(x, (Nx-2)*(Ny-2), MPI_DOUBLE, b, (Nx-2)*(Ny-2), MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Allgather(x, (Nx-2)*(Ny-2), MPI_DOUBLE, b, (Nx-2)*(Ny-2), MPI_DOUBLE, MPI_COMM_WORLD);
+    if (mpiroot) {
+        for (int i=0; i<(Nx-2)*(Ny-2); i++) {
+            cout << i << "  " << b[i] << endl;
+        }
+    }
+
+    // Copy global streamfunction vector back to LidDrivenCavity
+    cblas_dcopy((Nx-2)*(Ny-2), b, 1, psi_new, 1);
+
+    cout << mype << "  Finished dcopy" << endl;
 }
