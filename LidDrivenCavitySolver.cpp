@@ -14,7 +14,9 @@ int main(int argc, char* argv[])
 {
     // Initialise MPI
     //---------------------------------------------------------------------------------------------------------
-    MPI_Init(&argc, &argv);
+    // MPI_Init(&argc, &argv);
+    int provided;
+    MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
 
     // Get number of processes
     int world_size;
