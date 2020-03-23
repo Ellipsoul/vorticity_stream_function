@@ -288,16 +288,6 @@ void PoissonSolver::ReturnStream(double * psi_new, int Nx, int Ny) {
         }
     }
     
-    MPI_Datatype vec_type_in;
-    MPI_Datatype vec_type_out;
-    
-    MPI_Type_vector(ceil(1.0*n/npe), 1, 1, MPI_DOUBLE, &vec_type_in);
-    MPI_Type_vector(n, 1, 1, MPI_DOUBLE, &vec_type_out);
-
-    MPI_Type_commit(&vec_type_in);
-    MPI_Type_commit(&vec_type_out);
-    
-    // MPI_Gather(x, (Nx-2)*(Ny-2), MPI_DOUBLE, b, (Nx-2)*(Ny-2), MPI_DOUBLE, 0, MPI_COMM_WORLD);
     MPI_Allgather(x, (Nx-2)*(Ny-2), MPI_DOUBLE, b, (Nx-2)*(Ny-2), MPI_DOUBLE, MPI_COMM_WORLD);
     if (mpiroot) {
         for (int i=0; i<(Nx-2)*(Ny-2); i++) {
@@ -307,6 +297,4 @@ void PoissonSolver::ReturnStream(double * psi_new, int Nx, int Ny) {
 
     // Copy global streamfunction vector back to LidDrivenCavity
     cblas_dcopy((Nx-2)*(Ny-2), b, 1, psi_new, 1);
-
-    cout << mype << "  Finished dcopy" << endl;
 }

@@ -333,7 +333,6 @@ void LidDrivenCavity::Solve()
                 psi[i][j] = psi_new[(Ny-2)*(i-1) + (j-1)];
             }
         }
-        cout << mpirank << " made back to liddrivencavity" << endl;
         // Updated stream-function matrix visualisation
         if (mpiroot) {
             ofstream myfile8;
