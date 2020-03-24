@@ -7,6 +7,7 @@ Parallel numeric code for solving the vorticity stream function of incompressibl
 To run the solver in the command line from the main directory:
 
 ``` C++
-mkdir build; cd build; cmake ../; make; ./lidDrivenCavity --Lx 1.0 --Ly 1.0 --Nx 5 --Ny 5 --Px 4 --Py 4 --dt 0.01 --T 10 --Re 4000
+mkdir build; cd build; cmake ../; make; mpiexec -np 1 ./lidDrivenCavity --Lx 1.0 --Ly 1.0 --Nx 15 --Ny 15 --Px 1 --Py 1 --dt 0.0005 --T 5 --Re 100
 ```
 
+Note: As I was unable to fully implement the parallel solver (further explanation within the code), please set parameters Px, Py and np to 1 so that the code will be able to run in serial.
