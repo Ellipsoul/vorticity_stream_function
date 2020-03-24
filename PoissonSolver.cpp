@@ -73,9 +73,8 @@ PoissonSolver::~PoissonSolver()
     delete[] ipiv;
     delete[] work;
 
-    MPI_Finalize();
-    //Cblacs_gridexit(ctx);
-    //Cblacs_exit(0);
+    Cblacs_gridexit(ctx);
+    Cblacs_exit(0);
 }
 
 /**
@@ -87,19 +86,6 @@ PoissonSolver::~PoissonSolver()
  * @param dy            Vertical spacial increment
  */ 
 void PoissonSolver::SolvePoisson(double * omega_new, int Ny, int Nx, double dx, double dy) {
-    
-    // Visualise passed vorticity matrix (uncomment as needed)
-    // if (mpiroot) {
-    //     ofstream myfile4;
-    //     myfile4.open("vorticity_matrix_old_trans.txt");
-    //     for (int i=0; i<Ny; i++) {
-    //         for (int j=0; j<Nx; j++) {
-    //             myfile4 << *(omega_new + i*Nx + j) << " ";
-    //         }
-    //         myfile4 << endl;
-    //     }
-    //     myfile4.close();
-    // }
 
     // Populate Global A matrix (column major format)
     //----------------------------------------------------------------------------------------------------------------
@@ -154,18 +140,6 @@ void PoissonSolver::SolvePoisson(double * omega_new, int Ny, int Nx, double dx, 
     vorticity_vec = new double[n];
     b = new double[n];
     cblas_dcopy(n, omega_new, 1, b, 1);
-    
-    // ofstream myfile5;
-    // myfile5.open("b_vector.txt");
-    // for (int i=1; i<Ny-1; i++) {
-    //     for (int j=1; j<Nx-1; j++) {
-    //         vorticity_vec[(Ny*(i-1))+(j-1)] = omega_new +i*Nx +j;
-    //         b[(Ny-2)*(i-1)+(j-1)] = *vorticity_vec[(Ny*(i-1))+(j-1)];
-    //         // myfile5 << b[(Ny-2)*(i-1)+(j-1)] << endl;
-    //     }
-    // }
-    //cblas_dcopy((Nx-2)*(Ny-2), b, 1, psi_new, 1);
-    // myfile5.close();
 
     // Parallel Banded Matrix Solver
     //----------------------------------------------------------------------------------------------------------------
@@ -290,6 +264,7 @@ void PoissonSolver::SolvePoisson(double * omega_new, int Ny, int Nx, double dx, 
  * @param Ny            Grid points in y-direction
  */ 
 void PoissonSolver::ReturnStream(double * psi_new, int Nx, int Ny) {
+    // ********************************************************************************************************
     // Parallel code breaks at this point as I was unable to properly implement the Allgather function to 
     // collect the local matrices. With some troubleshooting I have found that only the root processor returns
     // its values to the b vector, the rest of the vector remains initialised but with random values

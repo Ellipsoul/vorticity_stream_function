@@ -296,7 +296,7 @@ void LidDrivenCavity::Solve()
     PoissonSolver* poisson = new PoissonSolver();
 
     // Loop through each time increment
-    for (int i=1; i<t_steps; i++) { 
+    for (int i=1; i<t_steps/10; i++) { 
         
         // Calculating vorticity boundary conditions at time t
         //---------------------------------------------------------------------------------------------------------
@@ -338,23 +338,18 @@ void LidDrivenCavity::Solve()
         // if (mpiroot) {
         //     ofstream myfile1;
         //     ofstream myfile2;
-        //     ofstream myfile3;
         //     myfile1.open("stream_matrix_old.txt");
         //     myfile2.open("vorticity_matrix_old.txt");
-        //     myfile3.open("vorticity_matrix_new.txt");
         //     for (int i=0; i<Nx; i++){
         //         for (int j=0; j<Ny; j++) {
         //             myfile1 << psi[i][j] << " ";
         //             myfile2 << omega[i][j] << " ";
-        //             myfile3 << omega_new[i][j] << " ";
         //         }
         //         myfile1 << endl;
         //         myfile2 << endl;
-        //         myfile3 << endl;
         //     }
         //     myfile1.close();
         //     myfile2.close();
-        //     myfile3.close();
         // }
 
         // Solve the Poisson problem to calculate stream-function at time t + dt
@@ -435,7 +430,7 @@ void LidDrivenCavity::Solve()
         psi_file.close();
         omega_file.close();
     }
-    cout << "calculated all values" << endl;
+    cout << "All velocity, stream-function and vorticity values calculated and saved" << endl;
     //-------------------------------------------------------------------------------------------------------------
     // Stop timer and calculate code runtime
     auto stop = chrono::high_resolution_clock::now();
