@@ -25,8 +25,6 @@ int main(int argc, char* argv[])  // Arguments accept command line inputs
     // Initialise MPI
     //---------------------------------------------------------------------------------------------------------
     MPI_Init(&argc, &argv);
-    //int provided;
-    //MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
 
     // Get number of processes
     int world_size;
@@ -87,4 +85,5 @@ int main(int argc, char* argv[])  // Arguments accept command line inputs
     // Execute solver
     solver -> Solve();
     //---------------------------------------------------------------------------------------------------------
+    return 0;
 }

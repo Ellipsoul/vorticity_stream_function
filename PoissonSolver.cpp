@@ -287,9 +287,13 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
  * @param Ny            Grid points in y-direction
  */ 
 void PoissonSolver::ReturnStream(double * psi_new, int Nx, int Ny) {
+    // Parallel code breaks at this point as I was unable to properly implement the Allgather function to 
+    // collect the local matrices. With some troubleshooting I have found that only the root processor returns
+    // its values to the b vector, the rest of the vector remains initialised but with random values
+
     // Assemble a global vorticity vector
-    // MPI_Allgather(x, (Nx-2)*(Ny-2), MPI_DOUBLE, b, (Nx-2)*(Ny-2), MPI_DOUBLE, MPI_COMM_WORLD);
+    MPI_Allgather(x, (Nx-2)*(Ny-2), MPI_DOUBLE, b, (Nx-2)*(Ny-2), MPI_DOUBLE, MPI_COMM_WORLD);
 
     // Copy global streamfunction vector back to LidDrivenCavity
-    cblas_dcopy((Nx-2)*(Ny-2), x, 1, psi_new, 1);
+    cblas_dcopy((Nx-2)*(Ny-2), b, 1, psi_new, 1);
 }

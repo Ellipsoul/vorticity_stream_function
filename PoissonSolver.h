@@ -39,6 +39,8 @@ class PoissonSolver
         int ku;             /// Upper diagonal bandwidth (global)
         int ldab;           /// Rows in banded A matrix (global, SCALAPACK form)
 
+        //double* vorticity_vec;
+
         double* A;          /// Declare A matrix (global)
         double* b;          /// Declare b array (global)
 
