@@ -267,7 +267,9 @@ void PoissonSolver::ReturnStream(double * psi_new, int Nx, int Ny) {
     // ********************************************************************************************************
     // Parallel code breaks at this point as I was unable to properly implement the Allgather function to 
     // collect the local matrices. With some troubleshooting I have found that only the root processor returns
-    // its values to the b vector, the rest of the vector remains initialised but with random values
+    // its values to the b vector, the rest of the vector remains initialised but with random values. Code 
+    // still works normally when number of processors is set to 1 (-np 1)
+    // ********************************************************************************************************
 
     // Assemble a global vorticity vector
     MPI_Allgather(x, (Nx-2)*(Ny-2), MPI_DOUBLE, b, (Nx-2)*(Ny-2), MPI_DOUBLE, MPI_COMM_WORLD);

@@ -2,6 +2,9 @@
 
 Parallel numeric code for solving the vorticity stream function of incompressible Navier-Stokes Equations. Written as part of a High Performance Computing assignment for 3rd Year Aeronautical Engineering at Imperial College London.
 
+GitHub Repository: https://github.com/Ellipsoul/vorticity_stream_function
+Branch "Submission_SpitFire" was submitted for this assignment
+
 ##### Running the solver
 
 To run the solver in the command line from the main directory:
