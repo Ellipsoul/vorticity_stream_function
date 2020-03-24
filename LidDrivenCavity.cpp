@@ -276,14 +276,13 @@ void LidDrivenCavity::Solve()
     const int Ny_const = Ny;
     double psi[Nx_const][Ny_const];
     double omega[Nx_const][Ny_const];
-    double omega_new[Nx_const][Ny_const];
+    omega_new = new double[(Nx-2)*(Ny-2)];
 
     // Initial vorticity and stream-function zero matrices
     for (int i=0; i<Nx; i++){
         for (int j=0; j<Ny; j++) {
             psi[i][j] = 0;
             omega[i][j] = 0;
-            omega_new[i][j] = 0;
         }
     }
 
@@ -303,16 +302,12 @@ void LidDrivenCavity::Solve()
         //---------------------------------------------------------------------------------------------------------
         for (int j=0; j<Nx; j++) {
             omega[0][j] = 2/(dy*dy) * (psi[0][j] - psi[1][j]) - 2*U/dy;  // Top Surface
-            omega_new[0][j] = omega[0][j];
             omega[Nx-1][j] = 2/(dy*dy) * (psi[Nx-1][j] - psi[Nx-2][j]);  // Bottom Surface
-            omega_new[Nx-1][j] = omega[Nx-1][j];
         }
 
         for (int j=1; j<Ny; j++) {
             omega[j][0] = 2/(dx*dx) * (psi[j][0] - psi[j][1]);           // Left Surface
-            omega_new[j][0] = omega[j][0];
             omega[j][Nx-1] = 2/(dx*dx) * (psi[j][Nx-1] - psi[j][Nx-2]);  // Right Surface
-            omega_new[j][Nx-1] = omega[j][Nx-1];
         }
         //---------------------------------------------------------------------------------------------------------
 
@@ -330,7 +325,7 @@ void LidDrivenCavity::Solve()
         //---------------------------------------------------------------------------------------------------------
         for (int j=1; j<Nx-1; j++) {
             for (int k=1; k<Ny-1; k++) {
-                omega_new[j][k] = ( (1/Re)* ( (omega[j-1][k]-2*omega[j][k]+omega[j+1][k])/(dx*dx) + 
+                omega_new[(Ny-2)*(j-1)+(k-1)] = ( (1/Re)* ( (omega[j-1][k]-2*omega[j][k]+omega[j+1][k])/(dx*dx) + 
                                     (omega[j][k+1]-2*omega[j][k]+omega[j][k-1])/(dy*dy) ) + 
                                     (psi[j-1][k]-psi[j+1][k])/(2*dx) * (omega[j][k+1]-omega[j][k-1])/(2*dy) -
                                     (psi[j][k+1]-psi[j][k-1])/(2*dy) * (omega[j-1][k]-omega[j+1][k])/(2*dx) ) * dt +
@@ -365,7 +360,7 @@ void LidDrivenCavity::Solve()
         // Solve the Poisson problem to calculate stream-function at time t + dt
         //---------------------------------------------------------------------------------------------------------        
         // Execute poisson solver
-        poisson -> SolvePoisson((double*)omega_new, Ny, Nx, dx, dy);
+        poisson -> SolvePoisson(omega_new, Ny, Nx, dx, dy);
 
         // Retrieve values for the new stream-function
         psi_new = new double[(Nx-2)*(Ny-2)];
@@ -380,7 +375,6 @@ void LidDrivenCavity::Solve()
             }
         }
         //---------------------------------------------------------------------------------------------------------
-
         // Updated stream-function matrix visualisation (uncomment if needed)
         // if (mpiroot) {
         //     ofstream myfile8;
@@ -441,6 +435,7 @@ void LidDrivenCavity::Solve()
         psi_file.close();
         omega_file.close();
     }
+    cout << "calculated all values" << endl;
     //-------------------------------------------------------------------------------------------------------------
     // Stop timer and calculate code runtime
     auto stop = chrono::high_resolution_clock::now();

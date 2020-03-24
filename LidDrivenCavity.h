@@ -52,5 +52,7 @@ private:
     double Lx;          /// Horizontal dimension of cavity
     double Ly;          /// Vertical dimension of cavity
     double Re;          /// Reynolds number
+
+    double* omega_new;
     double* psi_new;    /// Streamfunction array
 };

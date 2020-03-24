@@ -73,8 +73,9 @@ PoissonSolver::~PoissonSolver()
     delete[] ipiv;
     delete[] work;
 
-    Cblacs_gridexit(ctx);
-    Cblacs_exit(0);
+    MPI_Finalize();
+    //Cblacs_gridexit(ctx);
+    //Cblacs_exit(0);
 }
 
 /**
@@ -85,7 +86,7 @@ PoissonSolver::~PoissonSolver()
  * @param dx            Horizontal spacial increment
  * @param dy            Vertical spacial increment
  */ 
-void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, double dy) {
+void PoissonSolver::SolvePoisson(double * omega_new, int Ny, int Nx, double dx, double dy) {
     
     // Visualise passed vorticity matrix (uncomment as needed)
     // if (mpiroot) {
@@ -150,18 +151,20 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
 
     // Convert the vorticity matrix into a long vector (exclude vorticities in the boundaries)
     // Incremement index by column, then by row
-    double* vorticity_vec[n];
+    vorticity_vec = new double[n];
     b = new double[n];
-
+    cblas_dcopy(n, omega_new, 1, b, 1);
+    
     // ofstream myfile5;
     // myfile5.open("b_vector.txt");
-    for (int i=1; i<Ny-1; i++) {
-        for (int j=1; j<Nx-1; j++) {
-            vorticity_vec[(Ny*(i-1))+(j-1)] = (omega_new +i*Nx +j);
-            b[(Ny-2)*(i-1)+(j-1)] = *vorticity_vec[(Ny*(i-1))+(j-1)];
-            // myfile5 << b[(Ny-2)*(i-1)+(j-1)] << endl;
-        }
-    }
+    // for (int i=1; i<Ny-1; i++) {
+    //     for (int j=1; j<Nx-1; j++) {
+    //         vorticity_vec[(Ny*(i-1))+(j-1)] = omega_new +i*Nx +j;
+    //         b[(Ny-2)*(i-1)+(j-1)] = *vorticity_vec[(Ny*(i-1))+(j-1)];
+    //         // myfile5 << b[(Ny-2)*(i-1)+(j-1)] << endl;
+    //     }
+    // }
+    //cblas_dcopy((Nx-2)*(Ny-2), b, 1, psi_new, 1);
     // myfile5.close();
 
     // Parallel Banded Matrix Solver
