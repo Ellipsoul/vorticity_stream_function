@@ -296,7 +296,7 @@ void LidDrivenCavity::Solve()
     PoissonSolver* poisson = new PoissonSolver();
 
     // Loop through each time increment
-    for (int i=1; i<t_steps/10; i++) { 
+    for (int i=1; i<t_steps; i++) { 
         
         // Calculating vorticity boundary conditions at time t
         //---------------------------------------------------------------------------------------------------------
