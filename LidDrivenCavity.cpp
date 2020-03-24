@@ -203,7 +203,9 @@ void LidDrivenCavity::Solve()
 
     // Looping through every time increment
     for (int i=1; i<t_steps; i++) {  // Change the max to t_steps when ready
-        
+        if (i%10 == 0) {
+            cout << i << " out of " << t_steps << endl;
+        }
         // Calculating vorticity boundary conditions at time t
         //---------------------------------------------------------------------------------------------------------
         for (int j=0; j<Nx; j++) {
