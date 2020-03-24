@@ -2,7 +2,7 @@
 #include "LidDrivenCavity.h"
 #include "PoissonSolver.h"
 
-// Basic
+// Basic Libraries
 #include <iostream>
 #include <exception>
 #include <algorithm>
@@ -42,9 +42,9 @@ LidDrivenCavity::~LidDrivenCavity()
 }
 
 /**
- *  Verifies and sets the cavity domain
- *  @param xlen     Horizontal dimension of cavity
- *  @param ylen     Vertical dimension of cavity
+ * Verifies and sets the cavity domain
+ * @param xlen     Horizontal dimension of cavity
+ * @param ylen     Vertical dimension of cavity
  */ 
 void LidDrivenCavity::SetDomainSize(double xlen, double ylen)
 {

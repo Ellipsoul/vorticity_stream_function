@@ -25,25 +25,25 @@ class PoissonSolver
         bool mpiroot;       /// Identifies root processor
 
         // BLACS Variables
-        int mype;
-        int npe;
-        int ctx;
-        int nrow;
-        int ncol;
-        int myrow; 
-        int mycol;
-        char order; 
+        int mype;           /// Processor rank
+        int npe;            /// Number of processors
+        int ctx;            /// Context
+        int nrow;           /// Number of processor rows
+        int ncol;           /// Number of processor columns
+        int myrow;          /// Current processor row
+        int mycol;          /// Current processor column
+        char order;         /// Defines order of processors
 
-        int n;         // Columns in banded A matrix (global)
-        int kl;        // Low diagonal bandwidth (global)
-        int ku;        // Upper diagonal bandwidth (global)
-        int ldab;      // Rows in banded A matrix (global, SCALAPACK form)
-        double* A;     // Declare A matrix (global)
-        double* b;     // Declare b array (global)
+        int n;              /// Columns in banded A matrix (global)
+        int kl;             /// Lower diagonal bandwidth (global)
+        int ku;             /// Upper diagonal bandwidth (global)
+        int ldab;           /// Rows in banded A matrix (global, SCALAPACK form)
 
-        double* A_loc; // Declare A matrix (local)
-        double* x;     // Declare x array (local)
-        int* ipiv;     // Pivoting array
-        double* work;  // Delcare workspace
+        double* A;          /// Declare A matrix (global)
+        double* b;          /// Declare b array (global)
 
+        double* A_loc;      /// Declare A matrix (local)
+        double* x;          /// Declare x array (local)
+        int* ipiv;          /// Pivoting array
+        double* work;       /// Delcare workspace
 };

@@ -1,7 +1,7 @@
 // Header Files
 #include "PoissonSolver.h"
 
-// Basic
+// Basic Libraries
 #include <iostream>
 #include <math.h>
 #include <fstream>
@@ -11,9 +11,10 @@
 #include <cblas.h>
 #include <mpi.h>
 
-// Setting up BLACS grid
+using namespace std;
+
+// Declaring Blacs function
 extern "C" {
-    // CBlacs Declarations
     // Output parameters have a * while input parameters do not
     void Cblacs_pinfo(int*, int*);
     void Cblacs_get(int, int, int*);
@@ -24,8 +25,6 @@ extern "C" {
     void Cblacs_exit(int);
 }
 
-using namespace std;
-
 // Defining LAPACK routine for solving parallel banded linear system
 #define F77NAME(x) x##_
 extern "C" {
@@ -34,20 +33,19 @@ extern "C" {
                           double * work, const int& LW, int& info) ;
 }
 
-// Constructor
+/// Class Constructor
 PoissonSolver::PoissonSolver()
 {
     // Declare MPI variables
     MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);
     mpiroot = (mpirank == 0);
-
     if (mpiroot) {
         cout << "Poisson Solver instance created" << endl;
     }
 
     // Initialise CBLACS
     //----------------------------------------------------------------------------------------------------------------
-    // Initialises the BLACS world communicator (calls MPI_Init if needed)
+    // Initialises the BLACS world communicator
     // npe: total number of processes
     // mype: process rank (starting from 0)
     Cblacs_pinfo(&mype, &npe);
@@ -64,7 +62,7 @@ PoissonSolver::PoissonSolver()
     //----------------------------------------------------------------------------------------------------------------
 }
 
-// Destructor
+/// Class Destructor
 PoissonSolver::~PoissonSolver()
 {
     delete[] A;
@@ -79,10 +77,17 @@ PoissonSolver::~PoissonSolver()
     Cblacs_exit(0);
 }
 
-// Function to solve the Poisson problem
+/**
+ * Executes the Poisson solver
+ * @param omega_new     Vorticity matrix
+ * @param Ny            Grid points in y-direction
+ * @param Nx            Grid points in x-direction
+ * @param dx            Horizontal spacial increment
+ * @param dy            Vertical spacial increment
+ */ 
 void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, double dy) {
     
-    // Visualise passed vorticity matrix
+    // Visualise passed vorticity matrix (uncomment as needed)
     // if (mpiroot) {
     //     ofstream myfile4;
     //     myfile4.open("vorticity_matrix_old_trans.txt");
@@ -95,7 +100,7 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
     //     myfile4.close();
     // }
 
-    // Populate global A matrix (column major format)
+    // Populate Global A matrix (column major format)
     //----------------------------------------------------------------------------------------------------------------
     n = (Nx-2)*(Ny-2);             // Number of columns of global A matrix
     kl = Nx - 2;                   // Lower diagonal bandwidth  (Determined solely by number of columns)
@@ -104,7 +109,7 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
 
     A = new double[ldab*n];        // Initialise banded array/matrix
 
-    // Populate Global A matrix (currently in column major format)
+    // Populate Global A matrix
     for (int i=0; i<ldab*n; i++) {
         if ((i - 3*ku)%ldab == 0) {
             A[i] = 2/(dx*dx) + 2/(dy*dy);
@@ -120,26 +125,26 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
             A[i] = 0;
         }
     }
-
-    // A Matrix Visualisation (displayed in column major format)
-    if (mpiroot) {
-        // ofstream myfile6;
-        // myfile6.open("A_matrix.txt");
-        for (int i=0; i<n; i++){
-            for (int j=0; j<ldab; j++) {
-                if (A[i*ldab + j] != 0) {
-                    // myfile6 << A[i*ldab + j] << " ";
-                } 
-                else {
-                    // myfile6 << A[i*ldab + j] << "   ";
-                }
-            }
-            // myfile6 << endl;
-        }
-        // myfile6.close();
-    }
     //----------------------------------------------------------------------------------------------------------------
 
+    // A Matrix Visualisation (displayed in column major format, uncomment if needed)
+    // if (mpiroot) {
+    //     ofstream myfile6;
+    //     myfile6.open("A_matrix.txt");
+    //     for (int i=0; i<n; i++){
+    //         for (int j=0; j<ldab; j++) {
+    //             if (A[i*ldab + j] != 0) {
+    //                 myfile6 << A[i*ldab + j] << " ";
+    //             } 
+    //             else {
+    //                 myfile6 << A[i*ldab + j] << "   ";
+    //             }
+    //         }
+    //         myfile6 << endl;
+    //     }
+    //     myfile6.close();
+    // }
+    
     // Populate global b vector from passed in vorticity matrix argument
     //----------------------------------------------------------------------------------------------------------------
 
@@ -211,8 +216,9 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
             }
         }
     }
+    //----------------------------------------------------------------------------------------------------------------
 
-    // Local A matrix visualisation
+    // Local A matrix visualisation (uncomment as needed)
     // if (mpiroot) {
     //     ofstream A_locfile;
     //     A_locfile.open("Local_A.txt");
@@ -224,7 +230,6 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
     //     }
     //     A_locfile.close();
     // }
-    //----------------------------------------------------------------------------------------------------------------
 
     // Local x vector
     //----------------------------------------------------------------------------------------------------------------
@@ -242,18 +247,20 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
             }
         }
     }
-
-    // Local x vector visualisation
-    if (!mpiroot) {
-        ofstream x_locfile;
-        x_locfile.open("Local_x.txt");
-        for (int i=0; i<NB; i++) {
-            x_locfile << x[i] << endl;
-        }
-        x_locfile.close();
-    }
     //----------------------------------------------------------------------------------------------------------------
-    // Perform the parallel solve.
+
+    // Local x vector visualisation (uncomment as needed)
+    // if (!mpiroot) {
+    //     ofstream x_locfile;
+    //     x_locfile.open("Local_x.txt");
+    //     for (int i=0; i<NB; i++) {
+    //         x_locfile << x[i] << endl;
+    //     }
+    //     x_locfile.close();
+    // }
+    
+    // Perform parallel solve
+    //---------------------------------------------------------------------------------------------------------
     F77NAME(pdgbsv) (N, BWL, BWU, NRHS, A, JA, desca, ipiv, &x[0], IB, descb, work, LW, info);
     // Verify it completed successfully.
     if (info) {
@@ -261,7 +268,7 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
     }
     //---------------------------------------------------------------------------------------------------------
     
-    // Visualise new internal streamfunction
+    // Visualise new internal streamfunction (uncomment as needed)
     // if (mpiroot) {
     //     ofstream myfile7;
     //     myfile7.open("stream_vector_new.txt");
@@ -273,28 +280,16 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
 
 }
 
+/**
+ * Returns the calculated stream-function
+ * @param psi_new       Stream-function vector
+ * @param Nx            Grid points in x-direction
+ * @param Ny            Grid points in y-direction
+ */ 
 void PoissonSolver::ReturnStream(double * psi_new, int Nx, int Ny) {
     // Assemble a global vorticity vector
-    
-    MPI_Datatype vec_type_in;
-    MPI_Datatype vec_type_out;
-    
-    MPI_Type_vector(ceil(1.0*n/npe), 1, 1, MPI_DOUBLE, &vec_type_in);
-    MPI_Type_vector(n, 1, 1, MPI_DOUBLE, &vec_type_out);
-
-    MPI_Type_commit(&vec_type_in);
-    MPI_Type_commit(&vec_type_out);
-    
-    // MPI_Gather(x, (Nx-2)*(Ny-2), MPI_DOUBLE, b, (Nx-2)*(Ny-2), MPI_DOUBLE, 0, MPI_COMM_WORLD);
     MPI_Allgather(x, (Nx-2)*(Ny-2), MPI_DOUBLE, b, (Nx-2)*(Ny-2), MPI_DOUBLE, MPI_COMM_WORLD);
-    if (mpiroot) {
-        for (int i=0; i<(Nx-2)*(Ny-2); i++) {
-            cout << i << "  " << b[i] << endl;
-        }
-    }
 
     // Copy global streamfunction vector back to LidDrivenCavity
     cblas_dcopy((Nx-2)*(Ny-2), b, 1, psi_new, 1);
-
-    cout << mype << "  Finished dcopy" << endl;
 }
