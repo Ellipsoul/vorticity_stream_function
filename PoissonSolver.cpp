@@ -259,7 +259,6 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
     if (info) {
     cout << "Error occurred in PDGBTRS: " << info << endl;
     }
-    cout << "Performed pdgbsv" << endl;
     //---------------------------------------------------------------------------------------------------------
     
     // Visualise new internal streamfunction
@@ -276,17 +275,6 @@ void PoissonSolver::SolvePoisson(double* omega_new, int Ny, int Nx, double dx, d
 
 void PoissonSolver::ReturnStream(double * psi_new, int Nx, int Ny) {
     // Assemble a global vorticity vector
-    
-    if (mpiroot) {
-        for (int i=0; i<ceil(1.0*(Nx-2)*(Ny-2)/npe); i++) {
-            cout << "Processor " << mype << "        " << i << x[i] << endl;
-        }
-    }
-    if (!mpiroot) {
-        for (int i=0; i<ceil(1.0*(Nx-2)*(Ny-2)/npe); i++) {
-            cout << "Processor " << mype << "        " << i << x[i] << endl;
-        }
-    }
     
     MPI_Datatype vec_type_in;
     MPI_Datatype vec_type_out;

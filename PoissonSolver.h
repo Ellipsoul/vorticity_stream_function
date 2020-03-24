@@ -3,22 +3,35 @@
 #include <string>
 using namespace std;
 
+/**
+ * @class PoissonSolver
+ * @brief Solves the Poisson problem and calculates the updated stream-function 
+ */ 
 class PoissonSolver
 {
     public:
+        /// Class constructor and destructor
         PoissonSolver();
         ~PoissonSolver();
 
+        /// Executes the Poisson solver
         void SolvePoisson(double * omega_new, int Ny, int Nx, double dx, double dy);
+        /// Returns the calculated stream-function
         void ReturnStream(double * psi_new, int Nx, int Ny);
 
     private:
         // MPI Variables
-        int mpirank;
-        bool mpiroot;
+        int mpirank;        /// Processor rank
+        bool mpiroot;       /// Identifies root processor
 
         // BLACS Variables
-        int mype, npe, ctx, nrow, ncol, myrow, mycol;
+        int mype;
+        int npe;
+        int ctx;
+        int nrow;
+        int ncol;
+        int myrow; 
+        int mycol;
         char order; 
 
         int n;         // Columns in banded A matrix (global)

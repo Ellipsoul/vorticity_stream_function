@@ -17,11 +17,9 @@
 
 using namespace std;
 
-// Constructor
+/// Class Constructor
 LidDrivenCavity::LidDrivenCavity()
 {
-    // Declare MPI variables
-
     // Get number of processes
     int world_size;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
@@ -31,18 +29,23 @@ LidDrivenCavity::LidDrivenCavity()
     MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);
     mpiroot = (mpirank == 0);
 
+    // Announce creation of instance
     if (mpiroot) {
         cout << "LidDrivenCavity instance created" << endl;
     }
 }
 
-// Destructor (will be left empty)
+/// Class Destructor
 LidDrivenCavity::~LidDrivenCavity()
 {
-    // Maybe delete variables here...
+    delete[] psi_new;
 }
 
-// Setting the cavity size
+/**
+ *  Verifies and sets the cavity domain
+ *  @param xlen     Horizontal dimension of cavity
+ *  @param ylen     Vertical dimension of cavity
+ */ 
 void LidDrivenCavity::SetDomainSize(double xlen, double ylen)
 {
     // Catch and return errors if either value is not positive
@@ -58,7 +61,11 @@ void LidDrivenCavity::SetDomainSize(double xlen, double ylen)
     Ly = ylen;
 }
 
-// Setting discretised grid size
+/**
+ * Verifies and sets the discretisation grid size
+ * @param nx        Grid points in x-direction
+ * @param ny        Grid points in y-direction
+ */ 
 void LidDrivenCavity::SetGridSize(double nx, double ny)
 {
     // Catch and return erros if either value is not a positive integer
@@ -74,7 +81,10 @@ void LidDrivenCavity::SetGridSize(double nx, double ny)
     Ny = int(ny);
 }
 
-// Setting final time
+/**
+ * Verifies and sets the simulation duration
+ * @param finalt        Simulation duration
+ */ 
 void LidDrivenCavity::SetFinalTime(double finalt)
 {
     // Catch and return error if time input is not positive
@@ -86,7 +96,10 @@ void LidDrivenCavity::SetFinalTime(double finalt)
     T = finalt;
 }
 
-// Setting Reynolds number
+/**
+ * Verifies and sets the Reynolds Number
+ * @param re        Reynolds number
+ */ 
 void LidDrivenCavity::SetReynoldsNumber(double re)
 {
     // Catch and return error if Reynolds number is not positive
@@ -98,7 +111,15 @@ void LidDrivenCavity::SetReynoldsNumber(double re)
     Re = re;
 }
 
-// Setting time step size
+/**
+ * Verifies and sets the time increment step
+ * @param deltat        Time increment step
+ * @param Lx            Horizontal dimension of cavity
+ * @param Ly            Vertical dimension of cavity
+ * @param Nx            Grid points in x-direction
+ * @param Ny            Grid points in y-direction
+ * @param Re            Reynolds number
+ */ 
 void LidDrivenCavity::SetTimeStep(double deltat, double Lx, double Ly, unsigned int Nx, unsigned int Ny, double Re)
 {
     // Catch and return error if timestep is not positive
@@ -110,7 +131,13 @@ void LidDrivenCavity::SetTimeStep(double deltat, double Lx, double Ly, unsigned 
     dt = deltat;
 }
 
-// Setting number of partitions
+/**
+ * Verifies and sets the processor partitions for parallel programming
+ * @param px        Number of partitions in x-direction
+ * @param py        Number of partitions in y-direction
+ * @param nx        Grid points in x-direction
+ * @param ny        Grid points in y-direction
+ */ 
 void LidDrivenCavity::SetPartitions(double px, double py, int nx, int ny)
 {
     // Catch and return errors if either value is not a positive integer, or fails to properly divide domain
@@ -126,15 +153,34 @@ void LidDrivenCavity::SetPartitions(double px, double py, int nx, int ny)
     Py = int(py);
 }
 
-// Verify number of processors
-void LidDrivenCavity::VerifyProcessors() {
+/**
+ * Verifies the number of processors is consistent with partitions
+ * @param px        Number of partitions in x-direction
+ * @param py        Number of partitions in y-direction
+ */ 
+void LidDrivenCavity::VerifyProcessors(double px, double py) {
     // Catch and return error if there are too many processors for the current domain size
     if (np > (Nx-2)*(Ny-2)/(2*Nx-3)) {
         throw domain_error("Too many processors entered for an efficient parallel solution. Program terminated");
     }
+    // Catch and return error if number of processors entered fails to fill partition grid
+    if (np != px*py) {
+        throw domain_error("Number of processors provided must exactly fill the partition grid. Program terminated");
+    }
 }
 
-// Perform argument checks and assign into variable if passed
+/**
+ * Performs all the above class functions and prepares the solver
+ * @param Lx_arg        Horizontal dimension of cavity
+ * @param Ly_arg        Vertical dimension of cavity
+ * @param Nx_arg        Grid points in x-direction
+ * @param Ny_arg        Grid points in y-direction
+ * @param Px_arg        Number of partitions in x-direction
+ * @param Py_arg        Number of partitions in y-direction
+ * @param dt_arg        Time increment step
+ * @param T_arg         Simulation duration
+ * @param Re_arg        Reynolds number
+ */
 void LidDrivenCavity::Verify(const double Lx_arg, const double Ly_arg, const double Nx_arg, const double Ny_arg,
                                 const double Px_arg, const double Py_arg, const double dt_arg, const double T_arg, 
                                 const double Re_arg) 
@@ -205,9 +251,9 @@ void LidDrivenCavity::Verify(const double Lx_arg, const double Ly_arg, const dou
         exit(EXIT_FAILURE);
     }
 
-    // Verify processors
+    // Verify number of processors
     try {
-        VerifyProcessors();
+        VerifyProcessors(Px_arg, Py_arg);
     }
     catch (domain_error& e) {
         if (mpiroot) {
@@ -217,21 +263,22 @@ void LidDrivenCavity::Verify(const double Lx_arg, const double Ly_arg, const dou
     }
 }
 
-// Solver implementation
+/**
+ * Executes the solver
+ */
 void LidDrivenCavity::Solve()
 {  
-    // Start timer
+    // Start runtime timer
     auto start = chrono::high_resolution_clock::now();
 
-    // Initial conditions
+    // Initialise initial condition matrices
     const int Nx_const = Nx;
     const int Ny_const = Ny;
-
     double psi[Nx_const][Ny_const];
     double omega[Nx_const][Ny_const];
     double omega_new[Nx_const][Ny_const];
 
-    // Psi and Omega initial zero matrix
+    // Initial vorticity and stream-function zero matrices
     for (int i=0; i<Nx; i++){
         for (int j=0; j<Ny; j++) {
             psi[i][j] = 0;
@@ -240,7 +287,7 @@ void LidDrivenCavity::Solve()
         }
     }
 
-    // Useful variables
+    // Defining helper variables and lid velocity
     double dx = Lx/(Nx-1);
     double dy = Ly/(Ny-1);
     double U = 1.0;
@@ -249,8 +296,8 @@ void LidDrivenCavity::Solve()
     // Create new instance of the Poisson Solver
     PoissonSolver* poisson = new PoissonSolver();
 
-    // Looping through every time increment
-    for (int i=1; i<2; i++) {  // Change the max to t_steps when ready
+    // Loop through each time increment
+    for (int i=1; i<t_steps; i++) { 
         
         // Calculating vorticity boundary conditions at time t
         //---------------------------------------------------------------------------------------------------------
@@ -290,9 +337,10 @@ void LidDrivenCavity::Solve()
                                     omega[j][k];
             }
         }
+        //---------------------------------------------------------------------------------------------------------
 
-        // Vorticity and Stream-function visualisation
-        // if (MPI_ROOT) {
+        // Vorticity and Stream-function visualisation (uncomment if needed)
+        // if (mpiroot) {
         //     ofstream myfile1;
         //     ofstream myfile2;
         //     ofstream myfile3;
@@ -314,14 +362,12 @@ void LidDrivenCavity::Solve()
         //     myfile3.close();
         // }
 
-        //---------------------------------------------------------------------------------------------------------
-
         // Solve the Poisson problem to calculate stream-function at time t + dt
         //---------------------------------------------------------------------------------------------------------        
-        // Solve the poisson problem
+        // Execute poisson solver
         poisson -> SolvePoisson((double*)omega_new, Ny, Nx, dx, dy);
 
-        // Retrieve values for the new streamfunction
+        // Retrieve values for the new stream-function
         psi_new = new double[(Nx-2)*(Ny-2)];
         poisson -> ReturnStream(psi_new, Nx, Ny);
         //---------------------------------------------------------------------------------------------------------
@@ -333,31 +379,29 @@ void LidDrivenCavity::Solve()
                 psi[i][j] = psi_new[(Ny-2)*(i-1) + (j-1)];
             }
         }
-        cout << mpirank << " made back to liddrivencavity" << endl;
-        // Updated stream-function matrix visualisation
-        if (mpiroot) {
-            ofstream myfile8;
-            myfile8.open("stream_matrix_new.txt");
-            for (int i=0; i<Nx; i++) {
-                for (int j=0; j<Ny; j++) {
-                    myfile8 << psi[i][j] << " ";
-                }
-                myfile8 << endl;
-            }
-            myfile8.close();
-        }
-        //---------------------------------------------------------------------------------------------------------    
+        //---------------------------------------------------------------------------------------------------------
 
+        // Updated stream-function matrix visualisation (uncomment if needed)
+        // if (mpiroot) {
+        //     ofstream myfile8;
+        //     myfile8.open("stream_matrix_new.txt");
+        //     for (int i=0; i<Nx; i++) {
+        //         for (int j=0; j<Ny; j++) {
+        //             myfile8 << psi[i][j] << " ";
+        //         }
+        //         myfile8 << endl;
+        //     }
+        //     myfile8.close();
+        // }
     }
-    cout << mpirank << " made it outside the loop" << endl;
 
-    // Final streamfunction matrix found, solving for velocities
+    // Final streamfunction matrix found, solving for velocities and output to a file
     //-------------------------------------------------------------------------------------------------------------
     if (mpiroot) {
         double u[Ny-1][Nx];
         double v[Nx][Ny-1];
 
-        // u velocity (+ visualisation)
+        // u velocity
         ofstream u_file;
         u_file.open("u_velocity.txt");
         for (int i=0; i<Ny-1; i++) {
@@ -369,7 +413,7 @@ void LidDrivenCavity::Solve()
         }
         u_file.close();
 
-        // v velocity (+ visualisation)
+        // v velocity
         ofstream v_file;
         v_file.open("v_velocity.txt");
         for (int i=0; i<Ny; i++) {
@@ -397,7 +441,6 @@ void LidDrivenCavity::Solve()
         psi_file.close();
         omega_file.close();
     }
-
     //-------------------------------------------------------------------------------------------------------------
     // Stop timer and calculate code runtime
     auto stop = chrono::high_resolution_clock::now();
@@ -406,6 +449,6 @@ void LidDrivenCavity::Solve()
         cout << "Elapsed execution duration: " << duration.count() << " milliseconds" << endl;
     }
 
-    // Run destructor for instance
+    // Run destructor for poisson class instance
     poisson -> ~PoissonSolver();
 }

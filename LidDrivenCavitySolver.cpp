@@ -1,16 +1,26 @@
-// Basic
+/**
+ * Parallel numerical solution to the vorticity streamfunction formulation of the 2D Incompressible
+ * Navier-Stokes Equations using the Explicit Euler finite difference method
+ * 
+ * Author: Aron Teh
+ * Date Completed: 24 March 2020
+ * GitHub Repository: https://github.com/Ellipsoul/vorticity_stream_function
+ */
+
+// Linking Basic Libraries
 #include <iostream>
 #include <typeinfo>
 
-// External Libraries and Files
+// Linking External Libraries and Files
 #include "LidDrivenCavity.h"
 #include <boost/program_options.hpp>
 #include <cblas.h>
 #include <mpi.h>
 
+// Define Boost namespace
 namespace po = boost::program_options;
 
-int main(int argc, char* argv[])
+int main(int argc, char* argv[])  // Arguments accept command line inputs
 {
     // Initialise MPI
     //---------------------------------------------------------------------------------------------------------
@@ -30,8 +40,9 @@ int main(int argc, char* argv[])
     bool mpiroot = (mpirank == 0);
     //---------------------------------------------------------------------------------------------------------
 
+    // Perform solve
+    //---------------------------------------------------------------------------------------------------------
     // Create a new instance of the LidDrivenCavity class
-    // Uses a pointer so solver is actually storing the address of the new instance
     LidDrivenCavity* solver = new LidDrivenCavity();
 
     // Specify options that will be available to user
@@ -43,13 +54,10 @@ int main(int argc, char* argv[])
     opts.add_options()
         ("Lx", po::value<double>(), "Length of the domain in the x-direction")
         ("Ly", po::value<double>(), "Length of the domain in the y-direction")
-
-        // Positive integer checks required
         ("Nx", po::value<double>(), "Number of grid points in x-direction")
         ("Ny", po::value<double>(), "Number of grid points in y-direction")
         ("Px", po::value<double>(), "Number of partitions in the x-direction (parallel)")
         ("Py", po::value<double>(), "Number of partitions in the y-direction (parallel)")
-
         ("dt", po::value<double>(), "Time step size")
         ("T",  po::value<double>(), "Final time")
         ("Re", po::value<double>(), "Reynolds number");
@@ -78,8 +86,5 @@ int main(int argc, char* argv[])
 
     // Execute solver
     solver -> Solve();
-
-    // Finalise MPI
-    // MPI_Finalize();
- 
+    //---------------------------------------------------------------------------------------------------------
 }
